@@ -16,6 +16,10 @@ contract TokenPresale {
     uint256 public softCap;     // Minimum amount of ETH/USDT to raise
     uint256 public raisedAmount;
     uint256 public tokenSupply; // Total tokens available for presale
+    uint256 public minBuy;
+    uint256 public maxBuy;
+
+    bool public presale_status = true;
 
     IERC20 public token;
     IERC20 public paymentToken;
@@ -25,6 +29,9 @@ contract TokenPresale {
 
     enum PaymentMethod { ETH, USDT }
     PaymentMethod public paymentMethod;
+
+    enum RefundType {BURN, REFUND}
+    RefundType public refundType;
 
     mapping(address => uint256) public contributions;
     mapping(address => bool) public whitelist;
@@ -70,6 +77,7 @@ contract TokenPresale {
     modifier presaleActive() {
         require(block.timestamp >= startTime && block.timestamp <= endTime, "Presale not active");
         require(raisedAmount < hardCap, "Hard cap reached");
+        require(presale_status, "Presale is Cancelled");
         _;
     }
 
@@ -105,6 +113,12 @@ contract TokenPresale {
         emit TokensPurchased(msg.sender, tokenAmount, cost);
     }
 
+    function setPresaleTime(uint256 _starttime, uint256 _endtime ) public onlyOwner {
+        require(_starttime < _endtime, "Presale: Start time should be less than end time");
+        startTime = _starttime;
+        endTime = _endtime;
+    }
+
     function addWhitelist(address[] memory addresses) public onlyOwner {
         for (uint256 i = 0; i < addresses.length; i++) {
             whitelist[addresses[i]] = true;
@@ -130,4 +144,18 @@ contract TokenPresale {
         emit PresaleEnded(raisedAmount);
         selfdestruct(payable(owner));
     }
+
+    function cancelPresale() public onlyOwner {
+
+    }
+
+    function withdrawCancelledTokens() public onlyOwner {
+
+    }
+
+    function withdrawRefundBalanceTokens() public onlyOwner {
+
+    }
+
+
 }
