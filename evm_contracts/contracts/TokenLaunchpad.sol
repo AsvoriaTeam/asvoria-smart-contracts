@@ -1,15 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
+import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
+import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
+import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
+
 contract TokenLaunchpad is Initializable, ReentrancyGuardUpgradeable, OwnableUpgradeable {
-    using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     IERC20 public token;
@@ -23,10 +27,17 @@ contract TokenLaunchpad is Initializable, ReentrancyGuardUpgradeable, OwnableUpg
     uint256 public endTime;
     uint256 public listingRate;
     uint16 public liquidityBP;
+    uint16 public serviceFee;
     bool public presaleEnded;
     bool public presaleCanceled;
     bool public presaleRefund;
-    address public routerAddress;
+    address public burnAddress = 0x000000000000000000000000000000000000dEaD;
+    address public feeCollector;
+
+    IUniswapV2Router02 public uniswapRouter;
+    address public uniswapPair;
+    IERC20 public lpToken;  // LP Token received after adding liquidity
+
 
     enum RefundType {BURN, REFUND}
     RefundType public refundType;
@@ -42,6 +53,8 @@ contract TokenLaunchpad is Initializable, ReentrancyGuardUpgradeable, OwnableUpg
     event PresaleFinalized(bool success);
     event PresaleCanceled();
     event TokensClaimed(address indexed claimer, uint256 amount);
+    event LiquidityAdded(uint256 tokenAmount, uint256 ethAmount);
+    event LPTokenWithdrawn(address indexed owner, uint256 amount);
 
     function initialize(
         address _owner,
@@ -55,10 +68,15 @@ contract TokenLaunchpad is Initializable, ReentrancyGuardUpgradeable, OwnableUpg
         uint256 _endTime, 
         uint256 _listingRate,
         uint16 _liquidityBP,
-        address _routerAddress
+        uint16 _serviceFee,
+        address _uniswapRouter,
+        address _feeCollector,
+        RefundType _refundType,
+        ListingOpt _listingOpt
     ) external initializer {
         require(_softCap <= _hardCap, "Soft cap must be <= hard cap");
         require(_startTime < _endTime, "Start time must be before end time");
+        require(_liquidityBP > 0 && _liquidityBP <= 10000, "Invalid liquidity percentage");
 
         __Ownable_init();
         transferOwnership(_owner);
@@ -74,7 +92,11 @@ contract TokenLaunchpad is Initializable, ReentrancyGuardUpgradeable, OwnableUpg
         presaleCanceled = false;
         listingRate = _listingRate;
         liquidityBP = _liquidityBP;
-        routerAddress = _routerAddress;
+        serviceFee = _serviceFee;
+        uniswapRouter = IUniswapV2Router02(_uniswapRouter);
+        feeCollector = _feeCollector;
+        refundType = _refundType;
+        listingOpt = _listingOpt;
     }
 
     modifier presaleActive() {
@@ -93,16 +115,16 @@ contract TokenLaunchpad is Initializable, ReentrancyGuardUpgradeable, OwnableUpg
     function buyTokens() external payable nonReentrant presaleActive {
         uint256 weiAmount = msg.value;
         require(weiAmount >= minContribution && weiAmount <= maxContribution, "Contribution not within limits");
-        require(totalRaised.add(weiAmount) <= hardCap, "Exceeds hard cap");
+        require((totalRaised + weiAmount) <= hardCap, "Exceeds hard cap");
 
         uint8 decimals = ERC20(address(token)).decimals(); // Get the number of decimals from the token
-        uint256 tokens = weiAmount.mul(10**uint256(decimals)).div(tokenPrice); // Adjust dynamically based on token decimals
+        uint256 tokens = (weiAmount * (10**uint256(decimals))) / tokenPrice; // Adjust dynamically based on token decimals
         require(token.balanceOf(address(this)) >= tokens, "Not enough tokens available");
 
-        userPaidAmount[msg.sender] = weiAmount;
-        contributions[msg.sender] = contributions[msg.sender].add(weiAmount);
-        tokensClaimed[msg.sender] = tokensClaimed[msg.sender].add(tokens);
-        totalRaised = totalRaised.add(weiAmount);
+        userPaidAmount[msg.sender] += weiAmount;
+        contributions[msg.sender] += weiAmount;
+        tokensClaimed[msg.sender] = tokens;
+        totalRaised += weiAmount;
 
         emit TokensPurchased(msg.sender, tokens);
     }
@@ -115,13 +137,30 @@ contract TokenLaunchpad is Initializable, ReentrancyGuardUpgradeable, OwnableUpg
 
         if (totalRaised >= softCap) {
             // check listing type is auto or manual
-            // if auto transfer ethsoldfee to feecollector wallet check liquidity percentage and create liquidity and transfer remaining funds to the owner
-            // if manual transfer ethsoldfee to feecollector wallet and remaining funds to the owner
+            if(listingOpt == ListingOpt.AUTO) {
+                // if auto transfer ethsoldfee to feecollector wallet check liquidity percentage and create liquidity and transfer remaining funds to the owner
+                uint256 ethSoldFee = (totalRaised * serviceFee) / 10000;
+                uint256 ethForLiquidity = ((totalRaised - ethSoldFee) * liquidityBP) / 10000;
+                uint256 ownerAmount = totalRaised - ethSoldFee - ethForLiquidity;
+                payable(feeCollector).transfer(ethSoldFee);
+                addLiquidity(ethForLiquidity);
+                payable(owner()).transfer(ownerAmount);
+            } else {
+                // if manual transfer ethsoldfee to feecollector wallet and remaining funds to the owner
+                uint256 ethSoldFee = (totalRaised * serviceFee) / 10000;
+                payable(feeCollector).transfer(ethSoldFee);
+                payable(owner()).transfer(totalRaised - ethSoldFee);
+            }
             // also check refund type for ico token if burn so transfer all tokens to dEaD address otherwise allow owner to withdrawunsoldtokens
-            payable(owner()).transfer(totalRaised);
+            if(refundType == RefundType.BURN) {
+                token.safeTransfer(burnAddress, token.balanceOf(address(this)));
+            }
             emit PresaleFinalized(true);
         } else {
             //check refund type for ico token if burn so transfer all tokens to dEaD address otherwise allow owner to withdrawunsoldtokens
+            if(refundType == RefundType.BURN) {
+                token.safeTransfer(burnAddress, token.balanceOf(address(this)));
+            }
             refundContributors();
             emit PresaleFinalized(false);
         }
@@ -162,7 +201,7 @@ contract TokenLaunchpad is Initializable, ReentrancyGuardUpgradeable, OwnableUpg
 
         uint256 amount = tokensClaimed[msg.sender];
         tokensClaimed[msg.sender] = 0;
-        require(token.safeTransfer(msg.sender, amount), "Token transfer failed");
+        token.safeTransfer(msg.sender, amount);
 
         emit TokensClaimed(msg.sender, amount);
     }
@@ -176,7 +215,45 @@ contract TokenLaunchpad is Initializable, ReentrancyGuardUpgradeable, OwnableUpg
         }
     }
 
-    function withdrawLiquidityToken() external onlyOwner {
-        // withdraw LP token function to be implement here
+     // Add liquidity to Uniswap after the presale is finalized
+    function addLiquidity(uint256 ethForLiquidity) internal {
+        require(presaleEnded, "Presale not finalized");
+        require(!presaleCanceled, "Presale was canceled");
+
+        uint8 decimals = ERC20(address(token)).decimals();
+        uint256 tokensForLiquidity = (ethForLiquidity * (10**uint256(decimals))) / listingRate;
+
+        // Approve token transfer to Uniswap router
+        require(token.approve(address(uniswapRouter), tokensForLiquidity), "Token approval failed");
+
+        // Add the liquidity
+        (uint256 amountToken, uint256 amountETH, uint256 liquidity) = uniswapRouter.addLiquidityETH{value: ethForLiquidity}(
+            address(token),
+            tokensForLiquidity,
+            0, // Slippage is acceptable
+            0, // Slippage is acceptable
+            address(this), // LP tokens will be sent to this contract
+            block.timestamp
+        );
+
+        // Retrieve the pair address for the token and WETH
+        IUniswapV2Factory factoryContract = IUniswapV2Factory(uniswapRouter.factory());
+        uniswapPair = factoryContract.getPair(address(token), uniswapRouter.WETH());
+
+        // Set the LP token instance
+        lpToken = IERC20(uniswapPair);
+
+        emit LiquidityAdded(amountToken, amountETH);
+    }
+
+    // Function to withdraw LP tokens from the contract
+    function withdrawLPToken() external onlyOwner {
+        require(address(lpToken) != address(0), "No LP token available");
+        uint256 lpTokenBalance = lpToken.balanceOf(address(this));
+        require(lpTokenBalance > 0, "No LP token balance to withdraw");
+
+        lpToken.safeTransfer(owner(), lpTokenBalance);
+
+        emit LPTokenWithdrawn(owner(), lpTokenBalance);
     }
 }
