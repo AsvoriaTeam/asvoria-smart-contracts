@@ -45,6 +45,25 @@ contract TokenLaunchpad is Initializable, ReentrancyGuardUpgradeable, OwnableUpg
     enum ListingOpt {AUTO, MANUAL}
     ListingOpt public listingOpt;
 
+    struct Config {
+        address _owner;
+        IERC20 _token;
+        uint256 _tokenPrice;
+        uint256 _hardCap;
+        uint256 _softCap;
+        uint256 _minContribution;
+        uint256 _maxContribution;
+        uint256 _startTime;
+        uint256 _endTime;
+        uint256 _listingRate;
+        uint16 _liquidityBP;
+        uint16 _serviceFee;
+        address _uniswapRouter;
+        address _feeCollector;
+        RefundType _refundType;
+        ListingOpt _listingOpt;
+    }
+
     mapping(address => uint256) public contributions;
     mapping(address => uint256) public tokensClaimed;
     mapping(address => uint256) public userPaidAmount;
@@ -57,46 +76,31 @@ contract TokenLaunchpad is Initializable, ReentrancyGuardUpgradeable, OwnableUpg
     event LPTokenWithdrawn(address indexed owner, uint256 amount);
 
     function initialize(
-        address _owner,
-        IERC20 _token,
-        uint256 _tokenPrice,
-        uint256 _hardCap,
-        uint256 _softCap,
-        uint256 _minContribution,
-        uint256 _maxContribution,
-        uint256 _startTime,
-        uint256 _endTime, 
-        uint256 _listingRate,
-        uint16 _liquidityBP,
-        uint16 _serviceFee,
-        address _uniswapRouter,
-        address _feeCollector,
-        RefundType _refundType,
-        ListingOpt _listingOpt
+        Config memory _config
     ) external initializer {
-        require(_softCap <= _hardCap, "Soft cap must be <= hard cap");
-        require(_startTime < _endTime, "Start time must be before end time");
-        require(_liquidityBP > 0 && _liquidityBP <= 10000, "Invalid liquidity percentage");
+        require(_config._softCap <= _config._hardCap, "Soft cap must be <= hard cap");
+        require(_config._startTime < _config._endTime, "Start time must be before end time");
+        require(_config._liquidityBP > 0 && _config._liquidityBP <= 10000, "Invalid liquidity percentage");
 
-        __Ownable_init();
-        transferOwnership(_owner);
+        __Ownable_init(_config._owner);
+        transferOwnership(_config._owner);
 
-        token = _token;
-        tokenPrice = _tokenPrice;
-        hardCap = _hardCap;
-        softCap = _softCap;
-        minContribution = _minContribution;
-        maxContribution = _maxContribution;
-        startTime = _startTime;
-        endTime = _endTime;
+        token = _config._token;
+        tokenPrice = _config._tokenPrice;
+        hardCap = _config._hardCap;
+        softCap = _config._softCap;
+        minContribution = _config._minContribution;
+        maxContribution = _config._maxContribution;
+        startTime = _config._startTime;
+        endTime = _config._endTime;
         presaleCanceled = false;
-        listingRate = _listingRate;
-        liquidityBP = _liquidityBP;
-        serviceFee = _serviceFee;
-        uniswapRouter = IUniswapV2Router02(_uniswapRouter);
-        feeCollector = _feeCollector;
-        refundType = _refundType;
-        listingOpt = _listingOpt;
+        listingRate = _config._listingRate;
+        liquidityBP = _config._liquidityBP;
+        serviceFee = _config._serviceFee;
+        uniswapRouter = IUniswapV2Router02(_config._uniswapRouter);
+        feeCollector = _config._feeCollector;
+        refundType = _config._refundType;
+        listingOpt = _config._listingOpt;
     }
 
     modifier presaleActive() {

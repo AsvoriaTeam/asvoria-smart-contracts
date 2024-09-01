@@ -39,7 +39,7 @@ contract LaunchpadFactory is Initializable, ReentrancyGuardUpgradeable, UUPSUpgr
     event LaunchpadCreated(address indexed launchpad, address indexed owner);
 
     function initialize(address feeCollectorAddress, uint256 creatorFee, uint16 serviceFee) public initializer {
-        __Ownable_init();
+        __Ownable_init(msg.sender);
         __ReentrancyGuard_init();
         __UUPSUpgradeable_init();
 
@@ -60,24 +60,26 @@ contract LaunchpadFactory is Initializable, ReentrancyGuardUpgradeable, UUPSUpgr
         _forwardFunds();
 
         TokenLaunchpad newLaunchpad = new TokenLaunchpad();
-        newLaunchpad.initialize(
-            msg.sender,
-            _config._token,
-            _config._tokenPrice,
-            _config._hardCap,
-            _config._softCap,
-            _config._minContribution,
-            _config._maxContribution,
-            _config._startTime,
-            _config._endTime,
-            _config._listingRate,
-            _config._liquidityBP,
-            _serviceFee,
-            _config._routerAddress,
-            _feeCollector,
-            _config._refundType,
-            _config._listingOpt
-        );
+        TokenLaunchpad.Config memory newConfig = TokenLaunchpad.Config({
+            _owner: msg.sender,
+            _token: _config._token,
+            _tokenPrice: _config._tokenPrice,
+            _hardCap: _config._hardCap,
+            _softCap: _config._softCap,
+            _minContribution: _config._minContribution,
+            _maxContribution: _config._maxContribution,
+            _startTime: _config._startTime,
+            _endTime: _config._endTime,
+            _listingRate: _config._listingRate,
+            _liquidityBP: _config._liquidityBP,
+            _serviceFee: _serviceFee,
+            _uniswapRouter: _config._routerAddress,
+            _feeCollector: _feeCollector,
+            _refundType: _config._refundType,
+            _listingOpt: _config._listingOpt
+        });
+
+        newLaunchpad.initialize(newConfig);
 
         IERC20(_config._token).safeTransferFrom(msg.sender, address(newLaunchpad), _config._presaleTokens);
 

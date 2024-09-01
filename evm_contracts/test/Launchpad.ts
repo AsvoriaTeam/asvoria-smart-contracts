@@ -50,27 +50,95 @@ describe("Launchpad", function () {
             
             await Token.connect(addr2).approve(factoryAddress, tokensForLiquidity + presaleTotalTokens)
 
+            const config = {
+                _token: tokenAddress,
+                _tokenPrice: presaleRate,
+                _hardCap: hardCap,
+                _softCap: softCap,
+                _minContribution: minBuy,
+                _maxContribution: maxBuy,
+                _startTime: startTime,
+                _endTime: endTime,
+                _listingRate: listingRate,
+                _liquidityBP: liquidityBP,
+                _routerAddress: routerAddress,
+                _presaleTokens: tokensForLiquidity + presaleTotalTokens,
+                _refundType: 0,
+                _listingOpt: 0      
+            }
+
             const tx = await factoryContract.connect(addr2).createLaunchpad(
-                tokenAddress,
-                presaleRate,
-                hardCap,
-                softCap,
-                minBuy,
-                maxBuy,
-                startTime,
-                endTime,
-                listingRate,
-                liquidityBP,
-                routerAddress,
-                tokensForLiquidity + presaleTotalTokens,
-                0,
-                0,                
+                config,               
                 {
                     value: parseEther("0.2")
                 }
             );
 
-            console.log(await ethers.provider.getBalance(addr1.address))
+            const launchpadAddresses = await factoryContract.getLaunchpads()
+            console.log(launchpadAddresses)
+        })
+
+        it("Buy Tokens", async function () {
+            const {factoryContract, owner, Token, addr1, addr2, addr3, addr4} = await loadFixture(deployFixtures)
+            const tokenAddress = await Token.getAddress()
+            const tokenDecimals = await Token.decimals()
+            const presaleTokens = 100 //how many tokens in 1 Eth 
+            const liquidityPercentage = 70;
+            const tokenSupply = await Token.totalSupply();
+            const presaleRate = parseEther((1 / presaleTokens).toString())
+            const softCap = parseEther('0.5')
+            const hardCap = parseEther('1')
+            const minBuy = parseEther("0.01")
+            const maxBuy = parseEther("1")
+            const startTime = await time.latest()
+            const endTime = await time.latest() + 86400 // 1 day in seconds
+            const listingRate = parseEther((1 / 95).toString())
+            const liquidityBP = liquidityPercentage * 100;
+            const routerAddress = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
+            const presaleTotalTokens = parseUnits((parseFloat(hardCap.toString()) / parseFloat(presaleRate.toString())).toString(), tokenDecimals)
+            const factoryAddress = await factoryContract.getAddress()
+
+            const netHardCap = hardCap - (hardCap * BigInt(500) / BigInt(10000))
+            const ethForLiquidity = netHardCap * BigInt(liquidityBP) / BigInt(10000)
+            const tokensForLiquidity = BigInt((ethForLiquidity * parseUnits('1', tokenDecimals)) / listingRate)
+            
+            await Token.connect(addr2).approve(factoryAddress, tokensForLiquidity + presaleTotalTokens)
+
+            const config = {
+                _token: tokenAddress,
+                _tokenPrice: presaleRate,
+                _hardCap: hardCap,
+                _softCap: softCap,
+                _minContribution: minBuy,
+                _maxContribution: maxBuy,
+                _startTime: startTime,
+                _endTime: endTime,
+                _listingRate: listingRate,
+                _liquidityBP: liquidityBP,
+                _routerAddress: routerAddress,
+                _presaleTokens: tokensForLiquidity + presaleTotalTokens,
+                _refundType: 0,
+                _listingOpt: 0      
+            }
+
+            await factoryContract.connect(addr2).createLaunchpad(
+                config,               
+                {
+                    value: parseEther("0.2")
+                }
+            );
+
+            const launchpadAddresses = await factoryContract.getLaunchpads()
+
+            const launchpadContract = await ethers.getContractAt("TokenLaunchpad", launchpadAddresses[0])
+
+            await launchpadContract.connect(addr3).buyTokens({value: parseEther("1")})
+
+            await launchpadContract.connect(addr2).finalizePresale()
+
+            const lptoken = await launchpadContract.lpToken()
+
+            console.log(lptoken)
         })
     })
 })
