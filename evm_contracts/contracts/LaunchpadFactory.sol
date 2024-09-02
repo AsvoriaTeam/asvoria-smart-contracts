@@ -78,7 +78,7 @@ contract LaunchpadFactory is Initializable, ReentrancyGuardUpgradeable, UUPSUpgr
             _refundType: _config._refundType,
             _listingOpt: _config._listingOpt
         });
-
+        
         newLaunchpad.initialize(newConfig);
 
         IERC20(_config._token).safeTransferFrom(msg.sender, address(newLaunchpad), _config._presaleTokens);

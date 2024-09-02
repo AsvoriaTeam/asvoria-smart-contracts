@@ -83,7 +83,6 @@ contract TokenLaunchpad is Initializable, ReentrancyGuardUpgradeable, OwnableUpg
         require(_config._liquidityBP > 0 && _config._liquidityBP <= 10000, "Invalid liquidity percentage");
 
         __Ownable_init(_config._owner);
-        transferOwnership(_config._owner);
 
         token = _config._token;
         tokenPrice = _config._tokenPrice;
