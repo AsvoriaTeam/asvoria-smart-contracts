@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -26,6 +26,7 @@ contract TokenLaunchpad is Initializable, ReentrancyGuardUpgradeable, OwnableUpg
     uint256 public startTime;
     uint256 public endTime;
     uint256 public listingRate;
+    uint256 public liquidityLockTime;
     uint16 public liquidityBP;
     uint16 public serviceFee;
     bool public presaleEnded;
@@ -38,12 +39,14 @@ contract TokenLaunchpad is Initializable, ReentrancyGuardUpgradeable, OwnableUpg
     address public uniswapPair;
     IERC20 public lpToken;  // LP Token received after adding liquidity
 
-
     enum RefundType {BURN, REFUND}
     RefundType public refundType;
 
     enum ListingOpt {AUTO, MANUAL}
     ListingOpt public listingOpt;
+
+    enum LiquidityType {BURN, LOCK}
+    LiquidityType public liquidityType;
 
     struct Config {
         address _owner;
@@ -56,12 +59,15 @@ contract TokenLaunchpad is Initializable, ReentrancyGuardUpgradeable, OwnableUpg
         uint256 _startTime;
         uint256 _endTime;
         uint256 _listingRate;
+        uint256 _liquidityLockTime;
         uint16 _liquidityBP;
         uint16 _serviceFee;
         address _uniswapRouter;
         address _feeCollector;
         RefundType _refundType;
         ListingOpt _listingOpt;
+        LiquidityType _liquidityType;
+
     }
 
     mapping(address => uint256) public contributions;
@@ -81,6 +87,7 @@ contract TokenLaunchpad is Initializable, ReentrancyGuardUpgradeable, OwnableUpg
         require(_config._softCap <= _config._hardCap, "Soft cap must be <= hard cap");
         require(_config._startTime < _config._endTime, "Start time must be before end time");
         require(_config._liquidityBP > 0 && _config._liquidityBP <= 10000, "Invalid liquidity percentage");
+        require(_config._liquidityLockTime > 300, "Invalid Liquidity lock time");
 
         __Ownable_init(_config._owner);
 
@@ -100,6 +107,9 @@ contract TokenLaunchpad is Initializable, ReentrancyGuardUpgradeable, OwnableUpg
         feeCollector = _config._feeCollector;
         refundType = _config._refundType;
         listingOpt = _config._listingOpt;
+        liquidityType = _config._liquidityType;
+
+        liquidityLockTime = _config._liquidityLockTime;
     }
 
     modifier presaleActive() {
@@ -148,6 +158,12 @@ contract TokenLaunchpad is Initializable, ReentrancyGuardUpgradeable, OwnableUpg
                 payable(feeCollector).transfer(ethSoldFee);
                 addLiquidity(ethForLiquidity);
                 payable(owner()).transfer(ownerAmount);
+
+                if(liquidityType == LiquidityType.BURN) {
+                    uint256 lpTokenBalance = lpToken.balanceOf(address(this));
+                    lpToken.safeTransfer(burnAddress, lpTokenBalance);
+                }
+
             } else {
                 // if manual transfer ethsoldfee to feecollector wallet and remaining funds to the owner
                 uint256 ethSoldFee = (totalRaised * serviceFee) / 10000;
@@ -245,12 +261,13 @@ contract TokenLaunchpad is Initializable, ReentrancyGuardUpgradeable, OwnableUpg
 
         // Set the LP token instance
         lpToken = IERC20(uniswapPair);
-
+        liquidityLockTime = liquidityLockTime + block.timestamp;
         emit LiquidityAdded(amountToken, amountETH);
     }
 
     // Function to withdraw LP tokens from the contract
     function withdrawLPToken() external onlyOwner {
+        require(block.timestamp >= liquidityLockTime, "Liquidity lock period is not over yet");
         require(address(lpToken) != address(0), "No LP token available");
         uint256 lpTokenBalance = lpToken.balanceOf(address(this));
         require(lpTokenBalance > 0, "No LP token balance to withdraw");

@@ -63,8 +63,10 @@ describe("Launchpad", function () {
                 _liquidityBP: liquidityBP,
                 _routerAddress: routerAddress,
                 _presaleTokens: tokensForLiquidity + presaleTotalTokens,
+                _liquidityLockTime: 400,
                 _refundType: 0,
-                _listingOpt: 0      
+                _listingOpt: 0,
+                _liquidityType: 0 
             }
 
             const tx = await factoryContract.connect(addr2).createLaunchpad(
@@ -117,8 +119,10 @@ describe("Launchpad", function () {
                 _liquidityBP: liquidityBP,
                 _routerAddress: routerAddress,
                 _presaleTokens: tokensForLiquidity + presaleTotalTokens,
+                _liquidityLockTime: 400,
                 _refundType: 0,
-                _listingOpt: 0      
+                _listingOpt: 0,
+                _liquidityType: 1
             }
 
             await factoryContract.connect(addr2).createLaunchpad(
@@ -139,6 +143,25 @@ describe("Launchpad", function () {
             const lptoken = await launchpadContract.lpToken()
 
             console.log(lptoken)
+
+            const erc20Abi = [
+                "function balanceOf(address account) external view returns (uint256)"
+            ]
+            const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545")
+            const lpTokenContract = new ethers.Contract(lptoken, erc20Abi, provider);
+
+            const balance = await lpTokenContract.balanceOf(await launchpadContract.getAddress());
+            console.log('before contract balance', balance)
+
+            await time.increaseTo((await time.latest()) + (599));
+
+            await launchpadContract.connect(addr2).withdrawLPToken()
+
+            const balanceAfter = await lpTokenContract.balanceOf(await launchpadContract.getAddress());
+            console.log('after contract balance', balanceAfter)
+
+            const ownerBalance = await lpTokenContract.balanceOf(await addr2.getAddress());
+            console.log('owner balance', ownerBalance)
         })
     })
 })

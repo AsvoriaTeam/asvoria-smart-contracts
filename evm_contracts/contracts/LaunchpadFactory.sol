@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
@@ -31,8 +31,10 @@ contract LaunchpadFactory is Initializable, ReentrancyGuardUpgradeable, UUPSUpgr
         uint16 _liquidityBP;
         address _routerAddress;
         uint256 _presaleTokens;
+        uint256 _liquidityLockTime;
         TokenLaunchpad.RefundType _refundType;
         TokenLaunchpad.ListingOpt _listingOpt;
+        TokenLaunchpad.LiquidityType _liquidityType;
     }
 
 
@@ -71,12 +73,14 @@ contract LaunchpadFactory is Initializable, ReentrancyGuardUpgradeable, UUPSUpgr
             _startTime: _config._startTime,
             _endTime: _config._endTime,
             _listingRate: _config._listingRate,
+            _liquidityLockTime: _config._liquidityLockTime,
             _liquidityBP: _config._liquidityBP,
             _serviceFee: _serviceFee,
             _uniswapRouter: _config._routerAddress,
             _feeCollector: _feeCollector,
             _refundType: _config._refundType,
-            _listingOpt: _config._listingOpt
+            _listingOpt: _config._listingOpt,
+            _liquidityType: _config._liquidityType
         });
         
         newLaunchpad.initialize(newConfig);
