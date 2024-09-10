@@ -5,11 +5,15 @@ use crate::states::*;
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
-    #[account(init, payer = user, space = 8 + std::mem::size_of::<PresaleState>())]
+    #[account(
+        init,
+        payer = owner,
+        space = 8 + std::mem::size_of::<PresaleState>()
+    )]
     pub presale: Box<Account<'info, PresaleState>>,
     pub token: Account<'info, Mint>,
     #[account(mut)]
-    pub user: Signer<'info>,
+    pub owner: Signer<'info>,
     pub system_program: Program<'info, System>,
 }
 

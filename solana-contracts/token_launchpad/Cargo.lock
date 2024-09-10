@@ -1132,6 +1132,9 @@ name = "launchpad_factory"
 version = "0.1.0"
 dependencies = [
  "anchor-lang",
+ "anchor-spl",
+ "solana-program",
+ "token_launchpad",
 ]
 
 [[package]]

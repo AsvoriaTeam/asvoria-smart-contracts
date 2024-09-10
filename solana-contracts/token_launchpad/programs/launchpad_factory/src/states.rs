@@ -1,7 +1,12 @@
 use anchor_lang::prelude::*;
+use token_launchpad::states::{
+    RefundType,
+    LiquidityType,
+    ListingOpt
+};
 
 #[account]
-pub struct PresaleState {
+pub struct Presale {
     pub token_price: u64,
     pub hard_cap: u64,
     pub soft_cap: u64,
@@ -25,24 +30,6 @@ pub struct PresaleState {
 }
 
 #[account]
-pub struct ContributionState {
-    pub amount: u64,
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
-pub enum RefundType {
-    Burn,
-    Refund,
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
-pub enum ListingOpt {
-    Auto,
-    Manual,
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
-pub enum LiquidityType {
-    Burn,
-    Lock,
+pub struct Vault {
+    pub authority: Pubkey,
 }

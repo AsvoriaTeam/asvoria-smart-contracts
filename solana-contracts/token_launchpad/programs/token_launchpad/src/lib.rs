@@ -33,8 +33,6 @@ pub mod token_launchpad {
         enable_whitelist: bool
     ) -> Result<()> {
         let presale = &mut ctx.accounts.presale;
-        presale.token = ctx.accounts.token.key();
-        presale.token_decimals = ctx.accounts.token.decimals as u32;
         presale.token_price = token_price;
         presale.hard_cap = hard_cap;
         presale.soft_cap = soft_cap;
@@ -86,7 +84,7 @@ pub mod token_launchpad {
         );
 
         // Transfer tokens from the user to the presale account
-        let tokens = amount.checked_mul(10u64.pow(presale.token_decimals)).and_then(|f| f.checked_div(presale.token_price)).unwrap();
+        // let tokens = amount.checked_mul(10u64.pow(presale.token_decimals)).and_then(|f| f.checked_div(presale.token_price)).unwrap();
         
 
         presale.total_raised += amount;
@@ -159,7 +157,7 @@ pub mod token_launchpad {
 
         require!(presale.presale_refund, PresaleError::PresaleNotRefunded);
 
-        let refund_amount = contribution.amount;
+        let refund_amount: u64 = contribution.amount;
         contribution.amount = 0;
 
         // Transfer SOL back to the user
