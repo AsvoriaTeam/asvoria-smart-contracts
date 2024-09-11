@@ -1,11 +1,75 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
-use token_launchpad::program::TokenLaunchpad;
+use token_launchpad::{
+    program::TokenLaunchpad,
+    states::Vault,
+    states::PresaleState
+};
 
 use crate::{
     states::*,
     constants::*
 };
+
+#[derive(Accounts)]
+pub struct Initialize<'info> {
+    #[account(mut)]
+    pub admin: Signer<'info>,
+
+    #[account(
+        init_if_needed,
+        payer = admin,
+        seeds = [FACTORY_CONFIG],
+        bump,
+        space = 8 + std::mem::size_of::<Factory>()
+    )]
+    pub factory_config: Box<Account<'info, Factory>>,
+    pub fee_collector_info: AccountInfo<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct SetCreatorFee<'info> {
+    #[account(mut)]
+    pub admin: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [FACTORY_CONFIG],
+        bump,
+    )]
+    pub factory_config: Box<Account<'info, Factory>>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct SetServiceFee<'info> {
+    #[account(mut)]
+    pub admin: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [FACTORY_CONFIG],
+        bump,
+    )]
+    pub factory_config: Box<Account<'info, Factory>>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct SetFeeCollector<'info> {
+    #[account(mut)]
+    pub admin: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [FACTORY_CONFIG],
+        bump,
+    )]
+    pub factory_config: Box<Account<'info, Factory>>,
+    pub fee_collector_info: AccountInfo<'info>,
+    pub system_program: Program<'info, System>,
+}
 
 #[derive(Accounts)]
 pub struct CreatePresale<'info> {
@@ -14,9 +78,9 @@ pub struct CreatePresale<'info> {
         payer = owner,
         seeds = [PRESALE_SEED, owner.key().as_ref()],
         bump, 
-        space = 8 + std::mem::size_of::<Presale>()
+        space = 8 + std::mem::size_of::<PresaleState>()
     )]
-    pub presale: Box<Account<'info, Presale>>,
+    pub presale: Box<Account<'info, PresaleState>>,
 
     #[account(
         init,
@@ -36,6 +100,13 @@ pub struct CreatePresale<'info> {
         token::authority = token_vault_account
     )]
     pub token_vault_account: Account<'info, TokenAccount>,
+
+    #[account(
+        mut,
+        seeds = [FACTORY_CONFIG],
+        bump,
+    )]
+    pub factory_config: Box<Account<'info, Factory>>,
 
     #[account(mut)]
     pub owner: Signer<'info>,

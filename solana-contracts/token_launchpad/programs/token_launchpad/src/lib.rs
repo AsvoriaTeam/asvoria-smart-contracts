@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Transfer, Mint};
+use anchor_spl::token::{self, Transfer};
 use solana_program::clock::Clock;
 
 declare_id!("7p4mLDWLVj7d36G4kVj6s4uWs5bMGymt4KVpFF6tqYdW");
@@ -52,7 +52,6 @@ pub mod token_launchpad {
         presale.presale_refund = false;
         presale.fee_collector = fee_collector;
         presale.enable_whitelist = enable_whitelist;
-        presale.whitelist_users = Vec::new();
 
         Ok(())
     }

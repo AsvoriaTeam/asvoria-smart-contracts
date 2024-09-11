@@ -25,6 +25,11 @@ pub struct PresaleState {
 }
 
 #[account]
+pub struct Vault {
+    pub authority: Pubkey,
+}
+
+#[account]
 pub struct ContributionState {
     pub amount: u64,
 }
