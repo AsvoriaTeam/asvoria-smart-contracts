@@ -1,10 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
-use token_launchpad::{
-    program::TokenLaunchpad,
-    states::Vault,
-    states::PresaleState
-};
+use anchor_spl::associated_token::AssociatedToken;
+use token_launchpad::program::TokenLaunchpad;
 
 use crate::{
     states::*,
@@ -73,33 +70,14 @@ pub struct SetFeeCollector<'info> {
 
 #[derive(Accounts)]
 pub struct CreatePresale<'info> {
-    #[account(
-        init, 
-        payer = owner,
-        seeds = [PRESALE_SEED, owner.key().as_ref()],
-        bump, 
-        space = 8 + std::mem::size_of::<PresaleState>()
-    )]
-    pub presale: Box<Account<'info, PresaleState>>,
+    #[account(mut)]
+    pub presale: AccountInfo<'info>,
 
-    #[account(
-        init,
-        payer = owner,
-        seeds = [VAULT_SEED, owner.key().as_ref()],
-        bump,
-        space = 8 + std::mem::size_of::<Vault>()
-    )]
-    pub vault: Box<Account<'info, Vault>>,
+    #[account(mut)]
+    pub vault: AccountInfo<'info>,
 
-    #[account(
-        init,
-        payer = owner,
-        seeds = [TOKEN_VAULT_SEED, owner.key().as_ref()],
-        bump,
-        token::mint = token_mint,
-        token::authority = token_vault_account
-    )]
-    pub token_vault_account: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub token_vault_account: AccountInfo<'info>,
 
     #[account(
         mut,
@@ -109,10 +87,21 @@ pub struct CreatePresale<'info> {
     pub factory_config: Box<Account<'info, Factory>>,
 
     #[account(mut)]
+    pub fee_collector: AccountInfo<'info>,
+
+    #[account(
+        mut,
+        associated_token::mint = token_mint, 
+        associated_token::authority = owner,
+    )]
+    pub owner_token_account: Account<'info, TokenAccount>,
+
+    #[account(mut)]
     pub owner: Signer<'info>,
     // This is the reference to the TokenPresale program where the presale is managed
     pub presale_program: Program<'info, TokenLaunchpad>,
     pub token_mint: Account<'info, Mint>,
     pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
 }

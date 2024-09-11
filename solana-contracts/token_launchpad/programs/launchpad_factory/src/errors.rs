@@ -5,4 +5,6 @@ use anchor_lang::prelude::*;
 pub enum FactoryError {
     #[msg("Caller must be admin")]
     Unauthorized,
+    #[msg("Invalid fee account")]
+    InvalidFeeAccount,
 }

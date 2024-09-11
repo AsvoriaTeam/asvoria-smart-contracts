@@ -8,7 +8,9 @@ pub mod instructions;
 pub mod states;
 pub mod errors;
 pub mod events;
-use crate::{states::*, errors::PresaleError, instructions::*, events::*};
+pub mod utils;
+pub mod constants;
+use crate::{states::*, errors::PresaleError, instructions::*, events::*, utils::*};
 
 #[program]
 pub mod token_launchpad {
@@ -52,6 +54,7 @@ pub mod token_launchpad {
         presale.presale_refund = false;
         presale.fee_collector = fee_collector;
         presale.enable_whitelist = enable_whitelist;
+        presale.owner = ctx.accounts.owner.key();
 
         Ok(())
     }
@@ -81,13 +84,15 @@ pub mod token_launchpad {
             presale.total_raised + amount <= presale.hard_cap,
             PresaleError::ExceedsHardCap
         );
+        // transfer sol amount to the vault pda account
+        transfer_sols(&ctx.accounts.user.to_account_info(), &ctx.accounts.vault.to_account_info(), &ctx.accounts.system_program.to_account_info(), amount)?;
 
-        // Transfer tokens from the user to the presale account
-        // let tokens = amount.checked_mul(10u64.pow(presale.token_decimals)).and_then(|f| f.checked_div(presale.token_price)).unwrap();
-        
+        let tokens = amount.checked_mul(10u64.pow(ctx.accounts.token.decimals as u32)).and_then(|f| f.checked_div(presale.token_price)).unwrap();
 
         presale.total_raised += amount;
         contribution.amount += amount;
+        contribution.contributor = ctx.accounts.user.key();
+        contribution.tokens_purchased = tokens;
 
         emit!(TokensPurchased {
             purchaser: ctx.accounts.user.key(),

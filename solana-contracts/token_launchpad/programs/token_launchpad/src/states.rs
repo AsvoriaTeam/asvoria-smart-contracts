@@ -2,6 +2,7 @@ use anchor_lang::prelude::*;
 
 #[account]
 pub struct PresaleState {
+    pub owner: Pubkey,
     pub token_price: u64,
     pub hard_cap: u64,
     pub soft_cap: u64,
@@ -31,7 +32,9 @@ pub struct Vault {
 
 #[account]
 pub struct ContributionState {
+    pub contributor: Pubkey,
     pub amount: u64,
+    pub tokens_purchased: u64,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]

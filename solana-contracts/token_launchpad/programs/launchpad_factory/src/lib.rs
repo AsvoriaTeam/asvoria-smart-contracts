@@ -1,7 +1,8 @@
 use anchor_lang::prelude::*;
+use solana_program::clock::Clock;
 use token_launchpad::{
-    token_launchpad::initialize as initialize_launchpad,
-    instructions::Initialize as TokenInitialize,
+    cpi::initialize as initialize_launchpad,
+    cpi::accounts::Initialize as TokenInitialize,
     states::{
         ListingOpt,
         LiquidityType,
@@ -14,11 +15,13 @@ pub mod states;
 pub mod constants;
 pub mod errors;
 pub mod utils;
+pub mod events;
 use crate::{
     instructions::*,
-    errors::*
+    errors::*,
+    events::LaunchpadCreated
 };
-use crate::utils::transfer_fee;
+use crate::utils::*;
 
 
 declare_id!("C1A3qnPnS3yGv8kwsNHMACRK6TPHQ2ev3bo7zeKvMo7C");
@@ -64,6 +67,7 @@ pub mod launchpad_factory {
     pub fn create_presale(
         ctx: Context<CreatePresale>,
         token_price: u64,
+        presale_tokens: u64,
         hard_cap: u64,
         soft_cap: u64,
         min_contribution: u64,
@@ -76,21 +80,28 @@ pub mod launchpad_factory {
         listing_opt: ListingOpt,
         liquidity_type: LiquidityType,
         fee_collector: Pubkey,
-        enable_whitelist: bool,
+        enable_whitelist: bool
     ) -> Result<()> {
         let presale_account = &mut ctx.accounts.presale;
         let token_mint = &ctx.accounts.token_mint;
         let owner = &ctx.accounts.owner;
         let factory = &mut ctx.accounts.factory_config;
 
+        require!(factory.fee_collector == *ctx.accounts.fee_collector.key, FactoryError::InvalidFeeAccount);
+
+        transfer_sols(&ctx.accounts.owner.to_account_info(), &ctx.accounts.fee_collector, &ctx.accounts.system_program.to_account_info(), factory.creator_fee)?;
+
         // Initialize the presale program with provided parameters
         let cpi_ctx = CpiContext::new(
            ctx.accounts.presale_program.to_account_info(),
            TokenInitialize {
-            owner: owner.clone(),
-            presale: presale_account.clone(),
-            token: token_mint.clone(),
-            system_program: ctx.accounts.system_program
+            owner: owner.to_account_info(),
+            presale: presale_account.to_account_info(),
+            token: token_mint.to_account_info(),
+            system_program: ctx.accounts.system_program.to_account_info(),
+            token_program: ctx.accounts.token_program.to_account_info(),
+            token_vault_account: ctx.accounts.token_vault_account.to_account_info(),
+            vault: ctx.accounts.vault.to_account_info()
            }
         );
         
@@ -114,7 +125,21 @@ pub mod launchpad_factory {
             enable_whitelist
         )?;
 
-        transfer_fee(&owner.to_account_info(), factory.fee_collector, &ctx.accounts.system_program.to_account_info(), factory.creator_fee);
+        transfer_tokens(
+            ctx.accounts.owner_token_account.to_account_info(), 
+            ctx.accounts.token_vault_account.to_account_info(), 
+            ctx.accounts.token_program.to_account_info(), 
+            ctx.accounts.token_mint.clone(), 
+            presale_tokens
+        )?;
+
+        factory.launchpads.push(presale_account.key());
+
+        emit!(LaunchpadCreated {
+            launchpad: presale_account.key(),
+            owner: owner.key(),
+            timestamp: Clock::get().unwrap().unix_timestamp
+        });
 
         Ok(())
     }
