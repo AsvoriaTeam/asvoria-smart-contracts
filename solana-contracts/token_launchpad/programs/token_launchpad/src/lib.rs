@@ -243,12 +243,7 @@ pub mod token_launchpad {
 
             // Transfer SOL back to the user
             tranfer_sol_from_vault(ctx.accounts.vault.to_account_info(), ctx.accounts.user.to_account_info(), refund_amount)?;
-            // let vault_lamports = **ctx.accounts.vault.to_account_info().lamports.borrow();
-
-            // require!(vault_lamports > refund_amount, PresaleError::InsufficientFunds);
-            // **ctx.accounts.vault.to_account_info().try_borrow_mut_lamports()? -= refund_amount;
-            // **ctx.accounts.user.to_account_info().try_borrow_mut_lamports()? += refund_amount;
-        
+    
         }
 
         Ok(())
