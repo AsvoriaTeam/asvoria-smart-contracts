@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{Mint, Token, TokenAccount};
+use anchor_spl::{associated_token::AssociatedToken, token::{Mint, Token, TokenAccount}};
 
 use crate::{
     states::*,
@@ -60,9 +60,6 @@ pub struct Contribute<'info> {
     pub contribution: Box<Account<'info, ContributionState>>,
 
     #[account(mut)]
-    pub token_account: Account<'info, TokenAccount>,
-
-    #[account(mut)]
     pub user: Signer<'info>,
     
     pub token: Account<'info, Mint>,
@@ -73,9 +70,41 @@ pub struct Contribute<'info> {
 #[derive(Accounts)]
 pub struct FinalizePresale<'info> {
     #[account(mut)]
-
     pub presale: Account<'info, PresaleState>,
+    
     pub user: Signer<'info>,
+}
+
+#[derive(Accounts)]
+pub struct CancelPresale<'info> {
+    #[account(mut)]
+    pub presale: Account<'info, PresaleState>,
+    
+    pub user: Signer<'info>,
+}
+
+#[derive(Accounts)]
+pub struct WithdrawUnsoldTokens<'info> {
+    #[account(mut)]
+    pub presale: Account<'info, PresaleState>,
+
+    #[account(mut)]
+    pub owner: Signer<'info>,
+
+    #[account(mut)]
+    pub token_vault_account: Account<'info, TokenAccount>,
+
+    #[account(
+        mut,
+        associated_token::mint = token_mint, 
+        associated_token::authority = owner,
+    )]
+    pub owner_token_account: Account<'info, TokenAccount>,
+    
+    pub token_mint: Account<'info, Mint>,
+    pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
@@ -86,8 +115,8 @@ pub struct ClaimTokens<'info> {
     #[account(mut)]
     pub contribution: Account<'info, ContributionState>,
 
-    #[account(mut)]
-    pub token_account: Account<'info, TokenAccount>,
+    #[account(mut, seeds = [TOKEN_VAULT_SEED, owner.key().as_ref()], bump)]
+    pub token_vault_account: Account<'info, TokenAccount>,
 
     #[account(mut)]
     pub user_token_account: Account<'info, TokenAccount>,
@@ -95,7 +124,13 @@ pub struct ClaimTokens<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
 
+    #[account(mut)]
+    pub owner: AccountInfo<'info>,
+
+    pub token: Account<'info, Mint>,
     pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
+
 }
 
 #[derive(Accounts)]
@@ -105,6 +140,9 @@ pub struct RefundContributors<'info> {
 
     #[account(mut)]
     pub contribution: Account<'info, ContributionState>,
+
+    #[account(mut)]
+    pub vault: Box<Account<'info, Vault>>,
     
     #[account(mut)]
     pub user: Signer<'info>,

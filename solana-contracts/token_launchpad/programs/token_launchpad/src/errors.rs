@@ -23,4 +23,10 @@ pub enum PresaleError {
     NoTokensToClaim,
     #[msg("Presale is not refunded")]
     PresaleNotRefunded,
+    #[msg("not authorized")]
+    Unauthorized,
+    #[msg("Presale not ended or canceled")]
+    PresaleEndedOrCanceled,
+    #[msg("Insufficient Funds")]
+    InsufficientFunds,
 }
