@@ -24,7 +24,7 @@ use crate::{
 use crate::utils::*;
 
 
-declare_id!("C1A3qnPnS3yGv8kwsNHMACRK6TPHQ2ev3bo7zeKvMo7C");
+declare_id!("5gijUGHyDFRn92iDFraCFN8g3LfwHTSKR3ftapJvYrkJ");
 
 #[program]
 pub mod launchpad_factory {
@@ -129,11 +129,9 @@ pub mod launchpad_factory {
             ctx.accounts.owner_token_account.to_account_info(), 
             ctx.accounts.token_vault_account.to_account_info(), 
             ctx.accounts.token_program.to_account_info(), 
-            ctx.accounts.token_mint.clone(), 
+            ctx.accounts.owner.to_account_info(),
             presale_tokens
         )?;
-
-        factory.launchpads.push(presale_account.key());
 
         emit!(LaunchpadCreated {
             launchpad: presale_account.key(),

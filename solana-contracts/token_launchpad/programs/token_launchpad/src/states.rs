@@ -21,8 +21,7 @@ pub struct PresaleState {
     pub listing_opt: ListingOpt,
     pub liquidity_type: LiquidityType,
     pub fee_collector: Pubkey,
-    pub enable_whitelist: bool,
-    pub whitelist_users: Vec<Pubkey>
+    pub enable_whitelist: bool
 }
 
 #[account]

@@ -124,6 +124,7 @@ pub struct ClaimTokens<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
 
+    /// CHECK
     #[account(mut)]
     pub owner: AccountInfo<'info>,
 
