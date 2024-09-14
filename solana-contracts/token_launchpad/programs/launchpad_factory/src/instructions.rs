@@ -21,6 +21,8 @@ pub struct Initialize<'info> {
         space = 8 + std::mem::size_of::<Factory>()
     )]
     pub factory_config: Box<Account<'info, Factory>>,
+    /// CHECK
+    #[account(mut)]
     pub fee_collector_info: AccountInfo<'info>,
     pub system_program: Program<'info, System>,
 }
@@ -64,18 +66,23 @@ pub struct SetFeeCollector<'info> {
         bump,
     )]
     pub factory_config: Box<Account<'info, Factory>>,
+    /// CHECK
+    #[account(mut)]
     pub fee_collector_info: AccountInfo<'info>,
     pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
 pub struct CreatePresale<'info> {
+    /// CHECK
     #[account(mut)]
     pub presale: AccountInfo<'info>,
 
+    /// CHECK
     #[account(mut)]
     pub vault: AccountInfo<'info>,
 
+    /// CHECK
     #[account(mut)]
     pub token_vault_account: AccountInfo<'info>,
 
@@ -86,6 +93,7 @@ pub struct CreatePresale<'info> {
     )]
     pub factory_config: Box<Account<'info, Factory>>,
 
+    /// CHECK
     #[account(mut)]
     pub fee_collector: AccountInfo<'info>,
 
