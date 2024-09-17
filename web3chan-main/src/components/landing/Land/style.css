@@ -1,0 +1,178 @@
+/* style.css */
+
+/* Global styles */
+.container {
+    position: relative;
+    padding-top: 3rem;
+   
+  }
+  
+ 
+  
+  .overlay {
+    position: absolute;
+    inset: 0;
+    background-color: black;
+    opacity: 0.5;
+    z-index: 5;
+    pointer-events: none;
+  }
+  
+  .content-wrapper {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 20px;
+    z-index: 10;
+    pointer-events: none;
+    padding-top: 1.5rem; /* This is xsm:pt-6 */
+  }
+  
+  .content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+   
+  }
+  
+  /* Responsive styles */
+  .label {
+    background-color: #d632ff;
+    font-weight: 500;
+    padding: 8px;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: 283px;
+    height: 30px;
+    font-size: 20px;
+  }
+  
+  .heading {
+    font-weight: 800;
+    font-size: 58px;
+    width: 850px;
+    text-align: center;
+    margin: 0;
+  }
+  
+  .paragraph {
+    font-weight: 500;
+    font-size: 20px;
+    color: #c6c2c2;
+    width: 709px;
+    text-align: center;
+    margin: 0;
+  }
+  
+  /* Screen sizes */
+  
+  /* Extra small screens */
+  @media (max-width: 500px) {
+    .label {
+      width: 170px;
+      height: 22px;
+      font-size: 10px;
+    }
+  
+    .heading {
+      font-size: 18px;
+      width: 100%;
+      font-weight: 700; /* Matching xsm:font-bold */
+    }
+  
+    .paragraph {
+      font-size: 10px;
+      width: 100%;
+    }
+  }
+  
+  /* Small screens */
+  @media (min-width: 501px) and (max-width: 999px) {
+    .label {
+      width: 200px;
+      height: 26px;
+      font-size: 13px;
+    }
+  
+    .heading {
+      font-size: 22px;
+      width: 100%;
+    }
+  
+    .paragraph {
+      font-size: 12px;
+      width: 100%;
+      
+    }
+  }
+  
+  /* Medium screens */
+  @media (min-width: 1000px) and (max-width: 1200px) {
+    /* No changes needed as this was not specified */
+  }
+  
+  /* Large screens */
+  @media (min-width: 1201px) {
+    /* Default styling applies */
+  }
+  
+  /* Extra large screens */
+  @media (min-width: 1450px) {
+    /* Default styling applies */
+  }
+  
+
+  /* Platfrom Image styling */
+
+  .imageContainer{
+    width: 50%;
+    height: 100%;
+  }
+
+
+  @media (max-width: 500px) {
+    .imageContainer{
+      width: 100%;
+      height: 100%;
+    }
+  }
+  
+  /* Small screens */
+  @media (min-width: 501px) and (max-width: 999px) {
+    .imageContainer{
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+
+  /* platform Cards image css */
+
+
+  .cardImage{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  @media (min-width: 1000px) and (max-width: 1200px) {
+    .cardImage{
+      width: 400px;
+      
+    }
+  }
+  
+
+  @media (min-width: 1201px) {
+    .cardImage{
+      width: 448px;
+      height: 320px;
+    }
+  }

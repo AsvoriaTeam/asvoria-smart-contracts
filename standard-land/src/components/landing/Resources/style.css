@@ -1,0 +1,39 @@
+.paragraph{
+    font-weight: 400;
+    font-size: 14px;
+    color: #a2a2a2;
+    width: 548px;
+    text-align: left;
+}
+
+@media (max-width: 500px) {
+    .paragraph{
+        width: 100%;
+    }
+}
+@media (min-width: 501px) and (max-width: 999px) {
+    .paragraph{
+        width: 100%;
+    }
+}
+@media (min-width: 1000px) and (max-width: 1200px) {
+    .paragraph{
+        
+        font-size: 13px;
+      
+    }
+    
+  }
+  
+  
+  @media (min-width: 1201px) {
+    .paragraph{
+       
+        font-size: 16px;
+       
+    }
+  }
+
+  .zindex{
+    z-index: 100;
+  }

@@ -1,0 +1,142 @@
+@import url("https://fonts.googleapis.com/css2?family=Anonymous+Pro:ital,wght@0,400;0,700;1,400;1,700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #303030;
+  color: #FFFFFF;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+} */
+
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #08021c;
+  font-family: "Anonymous", monospace;
+}
+
+@font-face {
+  font-family: ProximaNovaSemibold;
+  src: url("./assets/fonts/ProximaNovaSemibold.otf");
+}
+
+.font_ProximaNovaSemibold {
+  font-family: ProximaNovaSemibold;
+}
+
+button,
+input {
+  font-family: ProximaNovaSemibold;
+}
+
+.t_scrollar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+  background: #bcafe6;
+}
+
+.t_scrollar::-webkit-scrollbar-thumb {
+  width: 6px;
+  height: 6px;
+  background: #5d5497;
+}
+
+
+.nav-links-home{
+  background-color: #5D4B97;
+  border-radius: 7px;
+}
+
+.nav-links-home:hover{
+  background-color: #5D4B97;
+}
+.nav-links{
+  background-color: none;
+  border-radius: 7px;
+}
+
+.nav-links:hover{
+  background-color: #5D4B97;
+}
+
+
+.presale-heading{
+  font-size: 35px;
+}
+
+.wallet-adapter-dropdown {
+  width: 100%;
+}
+
+@media (min-width: 765px)  {
+   
+  .hero{
+    height: 760px;
+  }
+  .platform{
+    width: 50%;
+  }
+  .margin{
+    margin: 0;
+  }
+
+  .platform-img{
+  width: 100%;
+
+  }
+   .token-p{
+    font-size: 2.5rem;
+   }
+   .token{
+    max-width: 80%;
+
+   }
+   .presale-heading{
+    font-size: 42px;
+   }
+ 
+}
+
+@media (max-width: 640px)  {
+   .mint{
+    margin: 0;
+   }
+
+   .top{
+    padding-top: 20px;
+   }
+}
+@media (max-width: 430px)  {
+   .mint-button{
+    flex-direction: column;
+   }
+}
+@media (min-width: 1020px) and (max-width: 1080px)  {
+   .mint-video{
+   
+    width: 410px;
+   }
+}
+

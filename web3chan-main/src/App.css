@@ -1,0 +1,29 @@
+/* Customize your main colors in :root variables
+:root {
+  --main-background-color: #343A50;
+  --card-background-color: #fcfcfc;
+  --countdown-background-color: #433765;
+  --main-text-color:#999792;
+  --title-text-color:#009a44;
+} */
+
+/* body{ */
+/*  background-color:var(--main-background-color);*/
+  /* background: url("img/background.png");
+  background-size: cover;
+  font-family: 'Petita', ;
+  font-size: 1.1em;
+} */
+	
+
+/* h2, p{
+  color: var(--main-text-color);
+}
+
+h3{
+font-weight: normal;
+color:#0b1347
+} */
+
+
+

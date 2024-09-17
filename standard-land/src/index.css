@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+    font-family: "NovaBold";
+    src: url("./assets/Fonts/Rene\ Bieder\ \ Milliard\ ExtraBold.otf");
+  }
+@font-face {
+    font-family: "NovaMedium";
+    src: url("./assets/Fonts/Rene\ Bieder\ \ Milliard\ Medium.otf");
+  }
+@font-face {
+    font-family: "NovaSemi";
+    src: url("./assets/Fonts/Rene\ Bieder\ \ Milliard\ SemiBold.otf");
+  }
+@font-face {
+    font-family: "NovaThin";
+    src: url("./assets/Fonts/Rene\ Bieder\ \ Milliard\ Thin.otf");
+  }
+
+  body{
+    background-color: black;
+    color: white;
+  }
+
+
+ .standardcard{
+  width: 494px;
+ }
+
+ @media (max-width: 500px) {
+  .standardcard{
+    width: 100%;
+   }
+}
+
+/* Small screens */
+@media (min-width: 501px) and (max-width: 999px) {
+  .standardcard{
+    width: 100%;
+   }
+  
+}
+
+/* Medium screens */
+@media (min-width: 1000px) and (max-width: 1200px) {
+  .standardcard{
+    width: 100%;
+   }
+}
+
+
+
+ /* .grd_text1{
+  background: linear-gradient(135deg, #01FEA8 0%, #46A5FF 51.04%, #D632FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+ } */
+
+.__d {
+  width: 100%;
+}
+
+ .__d .wallet-adapter-dropdown{
+  width: 100%;
+ }
