@@ -24,6 +24,24 @@ pub struct PresaleState {
     pub enable_whitelist: bool
 }
 
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct PresaleParams {
+    pub token_price: u64,
+    pub hard_cap: u64,
+    pub soft_cap: u64,
+    pub min_contribution: u64,
+    pub max_contribution: u64,
+    pub start_time: i64,
+    pub end_time: i64,
+    pub listing_rate: u64,
+    pub liquidity_bp: u16,
+    pub service_fee: u16,
+    pub refund_type: RefundType,
+    pub listing_opt: ListingOpt,
+    pub liquidity_type: LiquidityType,
+    pub enable_whitelist: bool
+}
+
 #[account]
 pub struct Vault {
     pub authority: Pubkey,

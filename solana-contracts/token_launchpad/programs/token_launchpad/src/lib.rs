@@ -1,8 +1,8 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Transfer};
+use anchor_spl::token_interface::{transfer_checked, TransferChecked};
 use solana_program::clock::Clock;
 
-declare_id!("GkRYZpgaEQFaX5S2MssFMsdg2kWiCF7UGiexXrT6eTek");
+declare_id!("BYRLxSc7PRKLvM4MR9EGQRFG5PYA9UiFKQdfscSm4xSH");
 
 pub mod instructions;
 pub mod states;
@@ -20,47 +20,12 @@ pub mod token_launchpad {
 
     pub fn initialize(
         ctx: Context<Initialize>,
-        token_price: u64,
-        hard_cap: u64,
-        soft_cap: u64,
-        min_contribution: u64,
-        max_contribution: u64,
-        start_time: i64,
-        end_time: i64,
-        listing_rate: u64,
-        liquidity_bp: u16,
-        service_fee: u16,
-        refund_type: RefundType,
-        listing_opt: ListingOpt,
-        liquidity_type: LiquidityType,
-        enable_whitelist: bool,
-        presale_id: u64
+        presale_config: PresaleParams
     ) -> Result<()> {
-        let presale = &mut ctx.accounts.presale;
         let vault = &mut ctx.accounts.vault;
-        let fee_collector = &mut ctx.accounts.fee_collector;
-        
-        presale.token_price = token_price;
-        presale.hard_cap = hard_cap;
-        presale.soft_cap = soft_cap;
-        presale.min_contribution = min_contribution;
-        presale.max_contribution = max_contribution;
-        presale.start_time = start_time;
-        presale.end_time = end_time;
-        presale.listing_rate = listing_rate;
-        presale.liquidity_bp = liquidity_bp;
-        presale.service_fee = service_fee;
-        presale.refund_type = refund_type;
-        presale.listing_opt = listing_opt;
-        presale.liquidity_type = liquidity_type;
-        presale.total_raised = 0;
-        presale.presale_ended = false;
-        presale.presale_canceled = false;
-        presale.presale_refund = false;
-        presale.fee_collector = fee_collector.key();
-        presale.enable_whitelist = enable_whitelist;
-        presale.owner = ctx.accounts.owner.key();
         vault.authority = ctx.accounts.owner.key();
+        
+        configure_presale(&mut ctx.accounts.presale, presale_config, ctx.accounts.fee_collector.to_account_info(), ctx.accounts.owner.to_account_info())?;
         
         Ok(())
     }
@@ -198,8 +163,8 @@ pub mod token_launchpad {
         Ok(())
     }
 
-    pub fn claim_tokens(ctx: Context<ClaimTokens>, presale_id: u64) -> Result<()> {
-        let presale: &Account<'_, PresaleState> = &ctx.accounts.presale;
+    pub fn claim_tokens(ctx: Context<ClaimTokens>) -> Result<()> {
+        let presale = &ctx.accounts.presale;
         let contribution = &mut ctx.accounts.contribution;
 
         require!(presale.presale_ended, PresaleError::PresaleNotFinalized);
@@ -207,22 +172,24 @@ pub mod token_launchpad {
         require!(!presale.presale_refund, PresaleError::PresaleRefund);
         require!(contribution.amount > 0, PresaleError::NoTokensToClaim);
 
-        let owner_key = ctx.accounts.owner.key();
+        let token_key = ctx.accounts.token.key();
 
         let bump = ctx.bumps.token_vault_account;
-        let signer: &[&[&[u8]]] = &[&[TOKEN_VAULT_SEED, owner_key.as_ref(), &[bump]]];
+        let signer: &[&[&[u8]]] = &[&[TOKEN_VAULT_SEED, token_key.as_ref(), &[bump]]];
 
-        token::transfer(
+        transfer_checked(
             CpiContext::new_with_signer(
                 ctx.accounts.token_program.to_account_info(), 
-                Transfer {
+                TransferChecked {
                     from: ctx.accounts.token_vault_account.to_account_info(),
+                    mint: ctx.accounts.token.to_account_info(),
                     to: ctx.accounts.user_token_account.to_account_info(),
                     authority: ctx.accounts.token_vault_account.to_account_info()
                 }, 
                 signer,
             ),
-            contribution.tokens_purchased
+            contribution.tokens_purchased,
+            ctx.accounts.token.decimals
         )?;
 
         contribution.amount = 0;

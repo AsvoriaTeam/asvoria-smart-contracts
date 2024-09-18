@@ -5,8 +5,8 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-launchpad_factory = "6wyhWTHVoUPNmWnjJSh4HL2dkxURwL6GPAyqLVqN7biF"
-token_launchpad = "GkRYZpgaEQFaX5S2MssFMsdg2kWiCF7UGiexXrT6eTek"
+launchpad_factory = "3EWEm3bTAdMPawiD1pAzRyXRsMjYJbwhHSiRWy7VimMx"
+token_launchpad = "BYRLxSc7PRKLvM4MR9EGQRFG5PYA9UiFKQdfscSm4xSH"
 
 [registry]
 url = "https://api.apr.dev"
