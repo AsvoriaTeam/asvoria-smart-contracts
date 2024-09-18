@@ -7,11 +7,28 @@ use crate::{
 };
 
 #[derive(Accounts)]
+#[instruction(
+    token_price: u64,
+    hard_cap: u64,
+    soft_cap: u64,
+    min_contribution: u64,
+    max_contribution: u64,
+    start_time: i64,
+    end_time: i64,
+    listing_rate: u64,
+    liquidity_bp: u16,
+    service_fee: u16,
+    refund_type: RefundType,
+    listing_opt: ListingOpt,
+    liquidity_type: LiquidityType,
+    enable_whitelist: bool,
+    presale_id: u64
+)]
 pub struct Initialize<'info> {
     #[account(
         init, 
         payer = owner,
-        seeds = [PRESALE_SEED, owner.key().as_ref()],
+        seeds = [PRESALE_SEED, presale_id.to_le_bytes().as_ref()],
         bump, 
         space = 8 + std::mem::size_of::<PresaleState>()
     )]
@@ -20,7 +37,7 @@ pub struct Initialize<'info> {
     #[account(
         init,
         payer = owner,
-        seeds = [VAULT_SEED, owner.key().as_ref()],
+        seeds = [VAULT_SEED, presale_id.to_le_bytes().as_ref()],
         bump,
         space = 8 + std::mem::size_of::<Vault>()
     )]
@@ -29,7 +46,7 @@ pub struct Initialize<'info> {
     #[account(
         init,
         payer = owner,
-        seeds = [TOKEN_VAULT_SEED, owner.key().as_ref()],
+        seeds = [TOKEN_VAULT_SEED, presale_id.to_le_bytes().as_ref()],
         bump,
         token::mint = token,
         token::authority = token_vault_account
@@ -37,6 +54,10 @@ pub struct Initialize<'info> {
     pub token_vault_account: Account<'info, TokenAccount>,
 
     pub token: Account<'info, Mint>,
+
+    /// CHECK
+    #[account(mut)]
+    pub fee_collector: AccountInfo<'info>,
 
     #[account(mut)]
     pub owner: Signer<'info>,
@@ -108,6 +129,7 @@ pub struct WithdrawUnsoldTokens<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(presale_id: u64)]
 pub struct ClaimTokens<'info> {
     #[account(mut)]
     pub presale: Account<'info, PresaleState>,
@@ -115,7 +137,7 @@ pub struct ClaimTokens<'info> {
     #[account(mut)]
     pub contribution: Account<'info, ContributionState>,
 
-    #[account(mut, seeds = [TOKEN_VAULT_SEED, owner.key().as_ref()], bump)]
+    #[account(mut, seeds = [TOKEN_VAULT_SEED, presale_id.to_le_bytes().as_ref()], bump)]
     pub token_vault_account: Account<'info, TokenAccount>,
 
     #[account(mut)]

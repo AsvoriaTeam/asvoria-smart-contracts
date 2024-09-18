@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Transfer};
 use solana_program::clock::Clock;
 
-declare_id!("JATxSqCECNZZU94ZKmFzF3FcSP1kg6JmDr9cxQ9J1Q84");
+declare_id!("GkRYZpgaEQFaX5S2MssFMsdg2kWiCF7UGiexXrT6eTek");
 
 pub mod instructions;
 pub mod states;
@@ -33,11 +33,13 @@ pub mod token_launchpad {
         refund_type: RefundType,
         listing_opt: ListingOpt,
         liquidity_type: LiquidityType,
-        fee_collector: Pubkey,
-        enable_whitelist: bool
+        enable_whitelist: bool,
+        presale_id: u64
     ) -> Result<()> {
         let presale = &mut ctx.accounts.presale;
         let vault = &mut ctx.accounts.vault;
+        let fee_collector = &mut ctx.accounts.fee_collector;
+        
         presale.token_price = token_price;
         presale.hard_cap = hard_cap;
         presale.soft_cap = soft_cap;
@@ -55,7 +57,7 @@ pub mod token_launchpad {
         presale.presale_ended = false;
         presale.presale_canceled = false;
         presale.presale_refund = false;
-        presale.fee_collector = fee_collector;
+        presale.fee_collector = fee_collector.key();
         presale.enable_whitelist = enable_whitelist;
         presale.owner = ctx.accounts.owner.key();
         vault.authority = ctx.accounts.owner.key();
@@ -196,7 +198,7 @@ pub mod token_launchpad {
         Ok(())
     }
 
-    pub fn claim_tokens(ctx: Context<ClaimTokens>) -> Result<()> {
+    pub fn claim_tokens(ctx: Context<ClaimTokens>, presale_id: u64) -> Result<()> {
         let presale: &Account<'_, PresaleState> = &ctx.accounts.presale;
         let contribution = &mut ctx.accounts.contribution;
 

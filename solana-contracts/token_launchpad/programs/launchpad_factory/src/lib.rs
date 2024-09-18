@@ -24,7 +24,7 @@ use crate::{
 use crate::utils::*;
 
 
-declare_id!("5gijUGHyDFRn92iDFraCFN8g3LfwHTSKR3ftapJvYrkJ");
+declare_id!("6wyhWTHVoUPNmWnjJSh4HL2dkxURwL6GPAyqLVqN7biF");
 
 #[program]
 pub mod launchpad_factory {
@@ -79,17 +79,18 @@ pub mod launchpad_factory {
         refund_type: RefundType,
         listing_opt: ListingOpt,
         liquidity_type: LiquidityType,
-        fee_collector: Pubkey,
-        enable_whitelist: bool
+        enable_whitelist: bool, 
+        presale_id: u64
     ) -> Result<()> {
         let presale_account = &mut ctx.accounts.presale;
         let token_mint = &ctx.accounts.token_mint;
         let owner = &ctx.accounts.owner;
         let factory = &mut ctx.accounts.factory_config;
+        let fee_collector = &mut ctx.accounts.fee_collector;
 
-        require!(factory.fee_collector == *ctx.accounts.fee_collector.key, FactoryError::InvalidFeeAccount);
+        require!(factory.fee_collector == *fee_collector.key, FactoryError::InvalidFeeAccount);
 
-        transfer_sols(&ctx.accounts.owner.to_account_info(), &ctx.accounts.fee_collector, &ctx.accounts.system_program.to_account_info(), factory.creator_fee)?;
+        transfer_sols(&ctx.accounts.owner.to_account_info(), &fee_collector, &ctx.accounts.system_program.to_account_info(), factory.creator_fee)?;
 
         // Initialize the presale program with provided parameters
         let cpi_ctx = CpiContext::new(
@@ -101,7 +102,8 @@ pub mod launchpad_factory {
             system_program: ctx.accounts.system_program.to_account_info(),
             token_program: ctx.accounts.token_program.to_account_info(),
             token_vault_account: ctx.accounts.token_vault_account.to_account_info(),
-            vault: ctx.accounts.vault.to_account_info()
+            vault: ctx.accounts.vault.to_account_info(),
+            fee_collector: fee_collector.clone()
            }
         );
         
@@ -121,8 +123,8 @@ pub mod launchpad_factory {
             refund_type,
             listing_opt,
             liquidity_type,
-            fee_collector,
-            enable_whitelist
+            enable_whitelist,
+            presale_id
         )?;
 
         transfer_tokens(
