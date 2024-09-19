@@ -17,7 +17,7 @@ pub mod token_launchpad {
     use super::*;
 
     pub fn initialize_presale(
-        ctx: Context<Initialize>,
+        ctx: Context<InitializePresale>,
         presale_config: PresaleParams
     ) -> Result<()> {
         configure_presale(&mut ctx.accounts.presale, presale_config, ctx.accounts.fee_collector.to_account_info(), ctx.accounts.owner.to_account_info())?;
@@ -25,7 +25,7 @@ pub mod token_launchpad {
         Ok(())
     }
 
-    pub fn initialize_vaults() -> Result<()> {
+    pub fn initialize_vaults(ctx: Context<InitializeVaults>) -> Result<()> {
         let vault = &mut ctx.accounts.vault;
         vault.authority = ctx.accounts.owner.key();
         Ok(())

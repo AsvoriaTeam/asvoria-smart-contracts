@@ -1,8 +1,8 @@
 use anchor_lang::prelude::*;
 use solana_program::clock::Clock;
 use token_launchpad::{
-    cpi::initialize as initialize_launchpad,
-    cpi::accounts::Initialize as TokenInitialize,
+    cpi::{initialize_presale, initialize_vaults},
+    cpi::accounts::{InitializePresale, InitializeVaults},
     states::{
         ListingOpt,
         LiquidityType,
@@ -95,14 +95,12 @@ pub mod launchpad_factory {
         // Initialize the presale program with provided parameters
         let cpi_ctx = CpiContext::new(
            ctx.accounts.presale_program.to_account_info(),
-           TokenInitialize {
+           InitializePresale {
             owner: owner.to_account_info(),
             presale: presale_account.to_account_info(),
             token: token_mint.to_account_info(),
             system_program: ctx.accounts.system_program.to_account_info(),
             token_program: ctx.accounts.token_program.to_account_info(),
-            token_vault_account: ctx.accounts.token_vault_account.to_account_info(),
-            vault: ctx.accounts.vault.to_account_info(),
             fee_collector: fee_collector.clone()
            }
         );
@@ -125,10 +123,24 @@ pub mod launchpad_factory {
         };
         
         // Call the `initialize_presale` function from the TokenPresale program
-        initialize_launchpad(
+        initialize_presale(
             cpi_ctx,
             presale_config
         )?;
+
+        let cpi_ctx_vault = CpiContext::new(
+            ctx.accounts.presale_program.to_account_info(),
+            InitializeVaults {
+                vault: ctx.accounts.vault.to_account_info(),
+                token_vault_account: ctx.accounts.token_vault_account.to_account_info(),
+                owner: owner.to_account_info(),
+                token: token_mint.to_account_info(),
+                system_program: ctx.accounts.system_program.to_account_info(),
+                token_program: ctx.accounts.token_program.to_account_info(),
+            }
+        );
+
+        initialize_vaults(cpi_ctx_vault)?;
 
         transfer_tokens(
             ctx.accounts.owner_token_account.to_account_info(), 
