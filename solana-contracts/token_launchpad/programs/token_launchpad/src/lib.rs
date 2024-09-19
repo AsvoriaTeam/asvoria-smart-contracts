@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{transfer_checked, TransferChecked};
 use solana_program::clock::Clock;
 
-declare_id!("BYRLxSc7PRKLvM4MR9EGQRFG5PYA9UiFKQdfscSm4xSH");
+declare_id!("5xdEgYSLUqzPBGxK2yPoQvbnEuah6iiYMGwhTLJNkXhA");
 
 pub mod instructions;
 pub mod states;

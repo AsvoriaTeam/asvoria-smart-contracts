@@ -102,6 +102,7 @@ pub struct CreatePresale<'info> {
         mut,
         associated_token::mint = token_mint, 
         associated_token::authority = owner,
+        associated_token::token_program = token_program
     )]
     pub owner_token_account: InterfaceAccount<'info, TokenAccount>,
 

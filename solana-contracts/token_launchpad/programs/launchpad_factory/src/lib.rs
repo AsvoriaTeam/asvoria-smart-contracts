@@ -25,7 +25,7 @@ use crate::{
 use crate::utils::*;
 
 
-declare_id!("3EWEm3bTAdMPawiD1pAzRyXRsMjYJbwhHSiRWy7VimMx");
+declare_id!("AGjcCEgWozAyFxFUjjPudiGq77BuKvygXHX9mR7ssqDx");
 
 #[program]
 pub mod launchpad_factory {

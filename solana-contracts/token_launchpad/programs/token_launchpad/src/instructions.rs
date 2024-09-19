@@ -50,7 +50,7 @@ pub struct InitializeVaults<'info> {
         seeds = [TOKEN_VAULT_SEED, token.key().as_ref()],
         bump,
         token::mint = token,
-        token::authority = token_vault_account
+        token::authority = token_vault_account,
     )]
     pub token_vault_account: InterfaceAccount<'info, TokenAccount>,
 
@@ -116,6 +116,7 @@ pub struct WithdrawUnsoldTokens<'info> {
         mut,
         associated_token::mint = token_mint, 
         associated_token::authority = owner,
+        associated_token::token_program = token_program
     )]
     pub owner_token_account: InterfaceAccount<'info, TokenAccount>,
     
@@ -136,7 +137,12 @@ pub struct ClaimTokens<'info> {
     #[account(mut, seeds = [TOKEN_VAULT_SEED, token.key().as_ref()], bump)]
     pub token_vault_account: InterfaceAccount<'info, TokenAccount>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        associated_token::mint = token, 
+        associated_token::authority = user,
+        associated_token::token_program = token_program
+    )]
     pub user_token_account: InterfaceAccount<'info, TokenAccount>,
 
     #[account(mut)]
