@@ -10,7 +10,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
-pub struct Initialize<'info> {
+pub struct InitializePresale<'info> {
     #[account(
         init_if_needed, 
         payer = owner,
@@ -20,6 +20,21 @@ pub struct Initialize<'info> {
     )]
     pub presale: Box<Account<'info, PresaleState>>,
 
+    pub token: InterfaceAccount<'info, Mint>,
+
+    /// CHECK
+    #[account(mut)]
+    pub fee_collector: AccountInfo<'info>,
+
+    #[account(mut)]
+    pub owner: Signer<'info>,
+
+    pub token_program: Interface<'info, TokenInterface>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct InitializeVaults<'info> {
     #[account(
         init_if_needed,
         payer = owner,
@@ -40,10 +55,6 @@ pub struct Initialize<'info> {
     pub token_vault_account: InterfaceAccount<'info, TokenAccount>,
 
     pub token: InterfaceAccount<'info, Mint>,
-
-    /// CHECK
-    #[account(mut)]
-    pub fee_collector: AccountInfo<'info>,
 
     #[account(mut)]
     pub owner: Signer<'info>,

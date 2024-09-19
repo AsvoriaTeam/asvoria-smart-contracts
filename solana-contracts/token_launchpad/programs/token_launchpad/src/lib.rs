@@ -10,23 +10,24 @@ pub mod errors;
 pub mod events;
 pub mod utils;
 pub mod constants;
-use crate::{states::*, errors::PresaleError, instructions::*, events::*, utils::*};
+use crate::{states::*, errors::PresaleError, instructions::*, events::*, utils::*, constants::*};
 
 #[program]
 pub mod token_launchpad {
-    use constants::TOKEN_VAULT_SEED;
-
     use super::*;
 
-    pub fn initialize(
+    pub fn initialize_presale(
         ctx: Context<Initialize>,
         presale_config: PresaleParams
     ) -> Result<()> {
-        let vault = &mut ctx.accounts.vault;
-        vault.authority = ctx.accounts.owner.key();
-        
         configure_presale(&mut ctx.accounts.presale, presale_config, ctx.accounts.fee_collector.to_account_info(), ctx.accounts.owner.to_account_info())?;
         
+        Ok(())
+    }
+
+    pub fn initialize_vaults() -> Result<()> {
+        let vault = &mut ctx.accounts.vault;
+        vault.authority = ctx.accounts.owner.key();
         Ok(())
     }
 
