@@ -1,12 +1,13 @@
 use anchor_lang::prelude::*;
 use solana_program::clock::Clock;
 use token_launchpad::{
-    cpi::initialize as initialize_launchpad,
-    cpi::accounts::Initialize as TokenInitialize,
+    cpi::{initialize_presale, initialize_vaults},
+    cpi::accounts::{InitializePresale, InitializeVaults},
     states::{
         ListingOpt,
         LiquidityType,
-        RefundType
+        RefundType,
+        PresaleParams
     }
 };
 
@@ -24,7 +25,7 @@ use crate::{
 use crate::utils::*;
 
 
-declare_id!("6wyhWTHVoUPNmWnjJSh4HL2dkxURwL6GPAyqLVqN7biF");
+declare_id!("AGjcCEgWozAyFxFUjjPudiGq77BuKvygXHX9mR7ssqDx");
 
 #[program]
 pub mod launchpad_factory {
@@ -79,8 +80,7 @@ pub mod launchpad_factory {
         refund_type: RefundType,
         listing_opt: ListingOpt,
         liquidity_type: LiquidityType,
-        enable_whitelist: bool, 
-        presale_id: u64
+        enable_whitelist: bool
     ) -> Result<()> {
         let presale_account = &mut ctx.accounts.presale;
         let token_mint = &ctx.accounts.token_mint;
@@ -95,22 +95,18 @@ pub mod launchpad_factory {
         // Initialize the presale program with provided parameters
         let cpi_ctx = CpiContext::new(
            ctx.accounts.presale_program.to_account_info(),
-           TokenInitialize {
+           InitializePresale {
             owner: owner.to_account_info(),
             presale: presale_account.to_account_info(),
             token: token_mint.to_account_info(),
             system_program: ctx.accounts.system_program.to_account_info(),
             token_program: ctx.accounts.token_program.to_account_info(),
-            token_vault_account: ctx.accounts.token_vault_account.to_account_info(),
-            vault: ctx.accounts.vault.to_account_info(),
             fee_collector: fee_collector.clone()
            }
         );
-        
-        // Call the `initialize_presale` function from the TokenPresale program
-        initialize_launchpad(
-            cpi_ctx,
-            token_price,
+
+        let presale_config = PresaleParams {
+            token_price ,
             hard_cap,
             soft_cap,
             min_contribution,
@@ -119,19 +115,39 @@ pub mod launchpad_factory {
             end_time,
             listing_rate,
             liquidity_bp,
-            factory.service_fee,
+            service_fee: factory.service_fee,
             refund_type,
             listing_opt,
             liquidity_type,
-            enable_whitelist,
-            presale_id
+            enable_whitelist
+        };
+        
+        // Call the `initialize_presale` function from the TokenPresale program
+        initialize_presale(
+            cpi_ctx,
+            presale_config
         )?;
+
+        let cpi_ctx_vault = CpiContext::new(
+            ctx.accounts.presale_program.to_account_info(),
+            InitializeVaults {
+                vault: ctx.accounts.vault.to_account_info(),
+                token_vault_account: ctx.accounts.token_vault_account.to_account_info(),
+                owner: owner.to_account_info(),
+                token: token_mint.to_account_info(),
+                system_program: ctx.accounts.system_program.to_account_info(),
+                token_program: ctx.accounts.token_program.to_account_info(),
+            }
+        );
+
+        initialize_vaults(cpi_ctx_vault)?;
 
         transfer_tokens(
             ctx.accounts.owner_token_account.to_account_info(), 
             ctx.accounts.token_vault_account.to_account_info(), 
-            ctx.accounts.token_program.to_account_info(), 
+            ctx.accounts.token_mint.clone(), 
             ctx.accounts.owner.to_account_info(),
+            ctx.accounts.token_program.to_account_info(),
             presale_tokens
         )?;
 

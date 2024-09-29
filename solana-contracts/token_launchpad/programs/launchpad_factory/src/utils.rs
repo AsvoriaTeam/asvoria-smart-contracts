@@ -1,7 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::{program::invoke, system_instruction};
-use anchor_spl::token_interface::{Transfer, transfer};
-use anchor_spl::token::Mint;
+use anchor_spl::token_interface::{transfer_checked, Mint, TransferChecked};
 
 pub fn transfer_sols<'info>(
     from: &AccountInfo<'info>,
@@ -30,13 +29,15 @@ pub fn transfer_sols<'info>(
 pub fn transfer_tokens<'info>(
     from: AccountInfo<'info>,
     to: AccountInfo<'info>,
-    token_program: AccountInfo<'info>,
+    mint: InterfaceAccount<'info, Mint>,
     owner: AccountInfo<'info>,
+    token_program: AccountInfo<'info>,
     amount: u64,
 ) -> Result<()> {
     // Set up the CPI (Cross-Program Invocation) context
-    let cpi_accounts = Transfer {
+    let cpi_accounts = TransferChecked {
         from: from.clone(),
+        mint: mint.to_account_info().clone(),
         to: to.clone(),
         authority: owner.clone(),
     };
@@ -44,7 +45,7 @@ pub fn transfer_tokens<'info>(
     let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
 
     // Invoke the transfer based on the token program
-    transfer(cpi_ctx, amount)?;
+    transfer_checked(cpi_ctx, amount, mint.decimals)?;
     Ok(())
 }
 

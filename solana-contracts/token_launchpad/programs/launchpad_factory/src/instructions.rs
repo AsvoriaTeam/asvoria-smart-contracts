@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{Mint, Token, TokenAccount};
+// use anchor_spl::token::{Mint, Token, TokenAccount};
+use anchor_spl::token_interface::{ TokenAccount, TokenInterface, Mint };
 use anchor_spl::associated_token::AssociatedToken;
 use token_launchpad::program::TokenLaunchpad;
 
@@ -14,7 +15,7 @@ pub struct Initialize<'info> {
     pub admin: Signer<'info>,
 
     #[account(
-        init_if_needed,
+        init,
         payer = admin,
         seeds = [FACTORY_CONFIG],
         bump,
@@ -101,15 +102,16 @@ pub struct CreatePresale<'info> {
         mut,
         associated_token::mint = token_mint, 
         associated_token::authority = owner,
+        associated_token::token_program = token_program
     )]
-    pub owner_token_account: Account<'info, TokenAccount>,
+    pub owner_token_account: InterfaceAccount<'info, TokenAccount>,
 
     #[account(mut)]
     pub owner: Signer<'info>,
     // This is the reference to the TokenPresale program where the presale is managed
     pub presale_program: Program<'info, TokenLaunchpad>,
-    pub token_mint: Account<'info, Mint>,
-    pub token_program: Program<'info, Token>,
+    pub token_mint: InterfaceAccount<'info, Mint>,
+    pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
 }
