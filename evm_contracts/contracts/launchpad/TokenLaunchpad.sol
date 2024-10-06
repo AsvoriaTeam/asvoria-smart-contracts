@@ -13,7 +13,9 @@ import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 
-contract TokenLaunchpad is Initializable, ReentrancyGuardUpgradeable, OwnableUpgradeable {
+import "./affiliate-program/AffiliateProgram.sol";
+
+contract TokenLaunchpad is Initializable, ReentrancyGuardUpgradeable, OwnableUpgradeable, AffiliateProgram {
     using SafeERC20 for IERC20;
 
     IERC20 public token;

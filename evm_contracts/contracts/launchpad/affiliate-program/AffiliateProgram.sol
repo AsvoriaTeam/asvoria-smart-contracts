@@ -17,6 +17,33 @@ contract AffiliateProgram is OwnableUpgradeable {
         commissionRate = newRate;
     }
 
+    // Function to register a referral
+    function registerReferral(address referrer) external {
+        require(referrer != msg.sender, "Cannot refer yourself");
+        require(referrerOf[msg.sender] == address(0), "Already referred");
+        referrerOf[msg.sender] = referrer;
+        emit NewReferral(referrer, msg.sender);
+    }
+
+    function recordContribution(address contributor, uint256 amount) external onlyOwner {
+        address referrer = referrerOf[contributor];
+        if (referrer != address(0)) {
+            uint256 commission = (amount * commissionRate) / 10000;
+            commissionBalance[referrer] += commission;
+            emit CommissionEarned(referrer, commission);
+        }
+    }
+
+    function withdrawCommission() external {
+        uint256 commission = commissionBalance[msg.sender];
+        require(commission > 0, "No commission available");
+        commissionBalance[msg.sender] = 0;
+        payable(msg.sender).transfer(commission);
+        emit CommissionWithdrawn(msg.sender, commission);
+    }
+
     
+
+
 
 }
