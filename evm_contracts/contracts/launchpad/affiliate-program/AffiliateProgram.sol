@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
-contract AffiliateProgram is Initializable, ReentrancyGuardUpgradeable, OwnableUpgradeable {
+contract AffiliateProgram is OwnableUpgradeable {
     uint256 public commissionRate = 500;
 
     mapping(address => address) public referrerOf; // referred -> referrer
