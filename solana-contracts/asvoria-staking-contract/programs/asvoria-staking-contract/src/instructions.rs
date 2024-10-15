@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 use crate::{
     states::*,
@@ -6,7 +7,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
-pub struct Initialize {
+pub struct Initialize<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
 
@@ -28,27 +29,34 @@ pub struct Initialize {
     )]
     pub total_stats_account: Box<Account<'info, Total>>,
 
+    #[account(
+        init,
+        payer = signer,
+        seeds = [VAULT_SEED],
+        bump,
+        token::mint = mint,
+        token::authority = token_vault_account
+    )]
+    pub token_vault_account: InterfaceAccount<'info, TokenAccount>,
+
+    pub mint: InterfaceAccount<'info, Mint>,
+    pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
 }
 
 
 #[derive(Accounts)]
-pub struct InitializePools {
+pub struct InitializePools<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
 
-    #[account(
-        mut,
-        payer = admin,
-        seeds = [ADMIN_ACCOUNT_SEED],
-        bump
-    )]
+    #[account(mut)]
     pub admin_account: Account<'info, Admin>,
 
     #[account(
         init,
         payer = admin,
-        seed = [POOL_INFO_SEED, &[1].as_ref(), &[1].as_ref()],
+        seeds = [POOL_INFO_SEED, &[1].as_ref(), &[1].as_ref()],
         bump,
         space = 8 + std::mem::size_of::<PoolInfo>()
     )]
@@ -57,7 +65,7 @@ pub struct InitializePools {
     #[account(
         init,
         payer = admin,
-        seed = [POOL_INFO_SEED, &[4].as_ref(), &[3].as_ref()],
+        seeds = [POOL_INFO_SEED, &[4].as_ref(), &[3].as_ref()],
         bump,
         space = 8 + std::mem::size_of::<PoolInfo>()
     )]
@@ -66,7 +74,7 @@ pub struct InitializePools {
     #[account(
         init,
         payer = admin,
-        seed = [POOL_INFO_SEED, &[8].as_ref(), &[6].as_ref()],
+        seeds = [POOL_INFO_SEED, &[8].as_ref(), &[6].as_ref()],
         bump,
         space = 8 + std::mem::size_of::<PoolInfo>()
     )]
@@ -75,7 +83,7 @@ pub struct InitializePools {
     #[account(
         init,
         payer = admin,
-        seed = [POOL_INFO_SEED, &[12].as_ref(), &[9].as_ref()],
+        seeds = [POOL_INFO_SEED, &[12].as_ref(), &[9].as_ref()],
         bump,
         space = 8 + std::mem::size_of::<PoolInfo>()
     )]
@@ -84,7 +92,7 @@ pub struct InitializePools {
     #[account(
         init,
         payer = admin,
-        seed = [POOL_INFO_SEED, &[18].as_ref(), &[12].as_ref()],
+        seeds = [POOL_INFO_SEED, &[18].as_ref(), &[12].as_ref()],
         bump,
         space = 8 + std::mem::size_of::<PoolInfo>()
     )]

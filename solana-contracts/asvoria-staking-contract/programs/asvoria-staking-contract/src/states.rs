@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 #[account]
 pub struct PoolInfo {
     pub duration: u64,            // total lock period in seconds
-    pub apy: u16,                 // apy
+    pub apy: u8,                 // apy
     pub last_reward_time: u64,    // Last block time that reward distribution occurs.
     pub acc_token_per_share: u64, // Accumulated reward per share, rewardPerTokenStored
     pub total_supply: u64,        // total supply in this pool

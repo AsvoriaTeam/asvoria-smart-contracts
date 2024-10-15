@@ -1,15 +1,15 @@
 use anchor_lang::prelude::*;
+use solana_program::clock::Clock;
 
-use solana_program::{clock::Clock};
-
-
-use crate::{PoolInfo}
+use crate::PoolInfo;
 
 pub fn configure_pool<'info>(
     pool_account: &mut Account<'info, PoolInfo>,
     _apy: u8,
     _duration: u8
 ) -> Result<()> {
+
+    let clock = Clock::get()?;
     
     let timestamp: u64 = clock.unix_timestamp as u64;
  
@@ -19,4 +19,9 @@ pub fn configure_pool<'info>(
 
     Ok(())
 
+}
+
+pub fn get_multiplier(from: u64, to: u64) -> u64 {
+    let result = to.checked_sub(from).unwrap();
+    result
 }
