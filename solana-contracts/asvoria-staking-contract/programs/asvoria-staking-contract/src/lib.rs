@@ -11,7 +11,7 @@ pub mod events;
 pub mod states;
 pub mod instructions;
 pub mod utils;
-use crate::{errors::ErrorCode, events::*, states::*, instructions::*, utils::*};
+use crate::{constants::* ,errors::ErrorCode, events::*, states::*, instructions::*, utils::*};
 
 #[program]
 pub mod asvoria_staking_contract {
@@ -27,18 +27,14 @@ pub mod asvoria_staking_contract {
         Ok(())
     }
 
-    pub fn initialize_pools(ctx: Context<InitializePools>) -> Result<()> {   
+    pub fn create_pool(ctx: Context<CreatePool>, _apy: u8, _duration: u8) -> Result<()> {   
         let admin_account = &mut ctx.accounts.admin_account;
         require!(
             admin_account.admin == *ctx.accounts.admin.key, 
             ErrorCode::NotAllowed
         );
 
-        let _ = configure_pool(&mut ctx.accounts.pool_account_1_month, 1, 1);
-        let _ = configure_pool(&mut ctx.accounts.pool_account_3_month, 4, 3);
-        let _ = configure_pool(&mut ctx.accounts.pool_account_6_month, 8, 6);
-        let _ = configure_pool(&mut ctx.accounts.pool_account_9_month, 12, 9);
-        let _ = configure_pool(&mut ctx.accounts.pool_account_12_month, 18, 12);
+        configure_pool(&mut ctx.accounts.pool_account, _apy, _duration)?;
 
         Ok(())
     }
@@ -49,8 +45,8 @@ pub mod asvoria_staking_contract {
         let total_stats = &mut ctx.accounts.total_stats_account;
         let clock = Clock::get()?;
 
-        let _ = update_pool(pool);
-        let _ = lock_pending_token(pool, user, total_stats);
+        update_pool(pool)?;
+        lock_pending_token(pool, user, total_stats)?;
 
         let stake_amount = _amount * (10u64.pow(ctx.accounts.mint.decimals as u32));
 
@@ -88,11 +84,123 @@ pub mod asvoria_staking_contract {
     }
 
     pub fn withdraw(ctx: Context<Withdraw>) -> Result<()> {
+        let pool = &mut ctx.accounts.pool_info_account;
+        let user = &mut ctx.accounts.user_info_account;
+        let total_stats = &mut ctx.accounts.total_stats_account;
+        let clock = Clock::get()?;
+
+        // let unstake_period = user.timestamp + pool.duration; // use this for production
+
+        let unstake_period = user.timestamp + 600; // use this for testing.. 
+
+        require!(
+            clock.unix_timestamp as u64 >= unstake_period,
+            ErrorCode::StakingNotExpired
+        );
+
+        update_pool(pool)?;
+        lock_pending_token(pool, user, total_stats)?;
+
+        let amount = user.amount;
+
+        if amount > 0 {
+            user.amount = user.amount - amount;
+            pool.total_supply = pool.total_supply - amount;
+
+            let staker = ctx.accounts.user.key();
+            let pool_account = pool.to_account_info().key();
+            let bump = ctx.bumps.stake_account;
+            let signer: &[&[&[u8]]] = &[&[TOKEN_SEED, staker.as_ref(), pool_account.as_ref(), &[bump]]];
+
+            // transferring stake amount
+            transfer_checked(
+                CpiContext::new_with_signer(
+                    ctx.accounts.token_program.to_account_info(), 
+                    TransferChecked{
+                        from: ctx.accounts.stake_account.to_account_info(),
+                        mint: ctx.accounts.mint.to_account_info(),
+                        authority: ctx.accounts.stake_account.to_account_info(),
+                        to: ctx.accounts.user_token_account.to_account_info()
+                    }, 
+                    signer
+                ), 
+                amount, ctx.accounts.mint.decimals
+            )?;
+
+            emit!(WithdrawEvent {
+                amount: amount,
+                user: ctx.accounts.user.key(),
+                pool: pool.to_account_info().key(),
+                timestamp: clock.unix_timestamp
+            });
+        }
+
+        let rewards = user.reward_lockedup;
+
+        if rewards > 0 {
+            user.reward_lockedup = user.reward_lockedup - rewards;
+            user.reward_debt = rewards;
+            total_stats.total_lockedup_rewards = total_stats.total_lockedup_rewards - rewards;
+            total_stats.total_claimed_rewards = total_stats.total_claimed_rewards + rewards;
+
+            let vault_bump = ctx.bumps.token_vault_account;
+            let vault_signer: &[&[&[u8]]] = &[&[VAULT_SEED, &[vault_bump]]];
+
+            // transferring rewards
+            transfer_checked(
+                CpiContext::new_with_signer(
+                    ctx.accounts.token_program.to_account_info(), 
+                    TransferChecked{
+                        from: ctx.accounts.token_vault_account.to_account_info(),
+                        mint: ctx.accounts.mint.to_account_info(),
+                        to: ctx.accounts.user_token_account.to_account_info(),
+                        authority: ctx.accounts.token_vault_account.to_account_info()
+                    }, 
+                    vault_signer
+                ), 
+                rewards, ctx.accounts.mint.decimals
+            )?;
+
+            emit!(RewardTransferEvent{
+                pool: pool.to_account_info().key(),
+                user: ctx.accounts.user.key(),
+                reward: rewards,
+                timestamp: clock.unix_timestamp
+            });
+        }
+
+
         Ok(())
     }
 
-    // pub fn withdraw_tokens_from_vault() -> Result<()> {
-    //     Ok(())
-    // }
+    pub fn withdraw_tokens_from_vault(ctx: Context<WithdrawFromVault>) -> Result<()> {
+        let admin_account = &mut ctx.accounts.admin_account;
+        require!(
+            admin_account.admin == *ctx.accounts.admin.key, 
+            ErrorCode::NotAllowed
+        );
+
+        let token_balance = ctx.accounts.token_vault_account.amount;
+        let vault_bump = ctx.bumps.token_vault_account;
+        let vault_signer: &[&[&[u8]]] = &[&[VAULT_SEED, &[vault_bump]]];
+
+        // transferring rewards
+        transfer_checked(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_program.to_account_info(), 
+                TransferChecked{
+                    from: ctx.accounts.token_vault_account.to_account_info(),
+                    mint: ctx.accounts.mint.to_account_info(),
+                    to: ctx.accounts.admin_token_account.to_account_info(),
+                    authority: ctx.accounts.token_vault_account.to_account_info()
+                }, 
+                vault_signer
+            ), 
+            token_balance, ctx.accounts.mint.decimals
+        )?;
+
+
+        Ok(())
+    }
 
 }

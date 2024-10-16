@@ -49,7 +49,8 @@ pub struct Initialize<'info> {
 
 
 #[derive(Accounts)]
-pub struct InitializePools<'info> {
+#[instruction(_apy: u8, _duration: u8)]
+pub struct CreatePool<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
 
@@ -59,47 +60,11 @@ pub struct InitializePools<'info> {
     #[account(
         init,
         payer = admin,
-        seeds = [POOL_INFO_SEED, &[1].as_ref(), &[1].as_ref()],
+        seeds = [POOL_INFO_SEED, &[_apy].as_ref(), &[_duration].as_ref()],
         bump,
         space = 8 + std::mem::size_of::<PoolInfo>()
     )]
-    pub pool_account_1_month: Box<Account<'info, PoolInfo>>,
-
-    #[account(
-        init,
-        payer = admin,
-        seeds = [POOL_INFO_SEED, &[4].as_ref(), &[3].as_ref()],
-        bump,
-        space = 8 + std::mem::size_of::<PoolInfo>()
-    )]
-    pub pool_account_3_month: Box<Account<'info, PoolInfo>>,
-
-    #[account(
-        init,
-        payer = admin,
-        seeds = [POOL_INFO_SEED, &[8].as_ref(), &[6].as_ref()],
-        bump,
-        space = 8 + std::mem::size_of::<PoolInfo>()
-    )]
-    pub pool_account_6_month: Box<Account<'info, PoolInfo>>,
-
-    #[account(
-        init,
-        payer = admin,
-        seeds = [POOL_INFO_SEED, &[12].as_ref(), &[9].as_ref()],
-        bump,
-        space = 8 + std::mem::size_of::<PoolInfo>()
-    )]
-    pub pool_account_9_month: Box<Account<'info, PoolInfo>>,
-
-    #[account(
-        init,
-        payer = admin,
-        seeds = [POOL_INFO_SEED, &[18].as_ref(), &[12].as_ref()],
-        bump,
-        space = 8 + std::mem::size_of::<PoolInfo>()
-    )]
-    pub pool_account_12_month: Box<Account<'info, PoolInfo>>,
+    pub pool_account: Box<Account<'info, PoolInfo>>,
 
     pub system_program: Program<'info, System>,
 }
@@ -157,4 +122,74 @@ pub struct Deposit<'info> {
 pub struct Withdraw<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
+
+    #[account(mut)]
+    pub total_stats_account: Account<'info, Total>,
+
+    #[account(mut)]
+    pub pool_info_account: Account<'info, PoolInfo>,
+
+    #[account(
+        mut,
+        seeds = [USER_INFO_SEED, user.key().as_ref(), pool_info_account.to_account_info().key().as_ref()], 
+        bump, 
+    )]
+    pub user_info_account: Account<'info, UserInfo>,
+
+    #[account(
+        mut,
+        seeds = [TOKEN_SEED, user.key().as_ref(), pool_info_account.to_account_info().key().as_ref()], 
+        bump, 
+    )]
+    pub stake_account: InterfaceAccount<'info, TokenAccount>,
+
+    #[account(
+        mut, 
+        associated_token::mint = mint, 
+        associated_token::authority = user,
+        associated_token::token_program = token_program
+    )]
+    pub user_token_account: InterfaceAccount<'info, TokenAccount>,
+
+    #[account(
+        mut,
+        seeds = [VAULT_SEED],
+        bump
+    )]
+    pub token_vault_account: InterfaceAccount<'info, TokenAccount>,
+
+    pub mint: InterfaceAccount<'info, Mint>,
+    pub token_program: Interface<'info, TokenInterface>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub system_program: Program<'info, System>,
+
+}
+
+#[derive(Accounts)]
+pub struct WithdrawFromVault<'info> {
+    #[account(mut)]
+    pub admin: Signer<'info>,
+
+    #[account(mut)]
+    pub admin_account: Account<'info, Admin>,
+
+    #[account(
+        mut,
+        seeds = [VAULT_SEED],
+        bump
+    )]
+    pub token_vault_account: InterfaceAccount<'info, TokenAccount>,
+
+    #[account(
+        mut, 
+        associated_token::mint = mint, 
+        associated_token::authority = admin,
+        associated_token::token_program = token_program
+    )]
+    pub admin_token_account: InterfaceAccount<'info, TokenAccount>,
+
+    pub mint: InterfaceAccount<'info, Mint>,
+    pub token_program: Interface<'info, TokenInterface>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub system_program: Program<'info, System>,
 }

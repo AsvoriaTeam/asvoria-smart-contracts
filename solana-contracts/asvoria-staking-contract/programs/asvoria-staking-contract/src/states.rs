@@ -15,8 +15,6 @@ pub struct UserInfo {
     pub reward_debt: u64,       // user reward per token paid
     pub reward_lockedup: u64,   //rewards
     pub timestamp: u64,         //stake time
-    pub unstake_timestamp: u64, //unstake time
-    pub unstake_flag: bool, // unstake flag. when user unstake and amount = 0 then it will start countdown till 7 days
 }
 
 #[account]
