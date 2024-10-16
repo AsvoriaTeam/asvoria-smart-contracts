@@ -1,5 +1,8 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
+use anchor_spl::{
+    associated_token::AssociatedToken, 
+    token_interface::{Mint, TokenAccount, TokenInterface}
+};
 
 use crate::{
     states::*,
@@ -35,7 +38,7 @@ pub struct Initialize<'info> {
         seeds = [VAULT_SEED],
         bump,
         token::mint = mint,
-        token::authority = token_vault_account
+        token::authority = token_vault_account,
     )]
     pub token_vault_account: InterfaceAccount<'info, TokenAccount>,
 
@@ -99,4 +102,59 @@ pub struct InitializePools<'info> {
     pub pool_account_12_month: Box<Account<'info, PoolInfo>>,
 
     pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct Deposit<'info> {
+    #[account(mut)]
+    pub user: Signer<'info>,
+
+    #[account(
+        mut
+    )]
+    pub total_stats_account: Account<'info, Total>,
+
+    #[account(
+        mut
+    )]
+    pub pool_info_account: Account<'info, PoolInfo>,
+
+    #[account(
+        init_if_needed,
+        seeds = [USER_INFO_SEED, user.key().as_ref(), pool_info_account.to_account_info().key().as_ref()], 
+        bump, 
+        payer = user, 
+        space = 8 + std::mem::size_of::<UserInfo>()
+    )]
+    pub user_info_account: Box<Account<'info, UserInfo>>,
+
+    #[account(
+        init_if_needed,
+        seeds = [TOKEN_SEED, user.key().as_ref(), pool_info_account.to_account_info().key().as_ref()], 
+        bump, 
+        payer = user, 
+        token::mint = mint,
+        token::authority = stake_account
+    )]
+    pub stake_account: InterfaceAccount<'info, TokenAccount>,
+
+    #[account(
+        mut, 
+        associated_token::mint = mint, 
+        associated_token::authority = user,
+        associated_token::token_program = token_program
+    )]
+    pub user_token_account: InterfaceAccount<'info, TokenAccount>,
+
+    pub mint: InterfaceAccount<'info, Mint>,
+    pub token_program: Interface<'info, TokenInterface>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub system_program: Program<'info, System>,
+
+}
+
+#[derive(Accounts)]
+pub struct Withdraw<'info> {
+    #[account(mut)]
+    pub user: Signer<'info>,
 }
