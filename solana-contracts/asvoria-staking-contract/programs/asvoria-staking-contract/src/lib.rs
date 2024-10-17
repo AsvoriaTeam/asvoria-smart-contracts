@@ -43,42 +43,47 @@ pub mod asvoria_staking_contract {
         let pool = &mut ctx.accounts.pool_info_account;
         let user = &mut ctx.accounts.user_info_account;
         let total_stats = &mut ctx.accounts.total_stats_account;
-        let clock = Clock::get()?;
+        // let clock = Clock::get()?;
 
-        update_pool(pool)?;
-        lock_pending_token(pool, user, total_stats)?;
+        msg!("pool Account: {:?}", pool.key().to_string());
+        msg!("user Account: {:?}", user.key().to_string());
+        msg!("total_stats Account: {:?}", total_stats.key().to_string());
+        msg!("stake_account Account: {:?}", ctx.accounts.stake_account.key().to_string());
+        // update_pool(pool)?;
+        // lock_pending_token(pool, user, total_stats)?;
 
-        let stake_amount = _amount * (10u64.pow(ctx.accounts.mint.decimals as u32));
+        // let stake_amount = _amount.checked_mul(10u64.pow(ctx.accounts.mint.decimals as u32)).unwrap_or(0);
+        // // let stake_amount = _amount * (10u64.pow(ctx.accounts.mint.decimals as u32));
 
-        if stake_amount > 0 {
-            if user.amount == 0 {
-                user.timestamp = clock.unix_timestamp as u64;
-            }
-            // implement Transfer token
-            transfer_checked(
-                CpiContext::new(
-                    ctx.accounts.token_program.to_account_info(),
-                    TransferChecked {
-                        from: ctx.accounts.user_token_account.to_account_info(),
-                        mint: ctx.accounts.mint.to_account_info(),
-                        to: ctx.accounts.stake_account.to_account_info(),
-                        authority: ctx.accounts.user.to_account_info(),
-                    },
-                ),
-                stake_amount, ctx.accounts.mint.decimals
-            )?;
+        // if stake_amount > 0 {
+        //     if user.amount == 0 {
+        //         user.timestamp = clock.unix_timestamp as u64;
+        //     }
+        //     // implement Transfer token
+        //     transfer_checked(
+        //         CpiContext::new(
+        //             ctx.accounts.token_program.to_account_info(),
+        //             TransferChecked {
+        //                 from: ctx.accounts.user_token_account.to_account_info(),
+        //                 mint: ctx.accounts.mint.to_account_info(),
+        //                 to: ctx.accounts.stake_account.to_account_info(),
+        //                 authority: ctx.accounts.user.to_account_info(),
+        //             },
+        //         ),
+        //         stake_amount, ctx.accounts.mint.decimals
+        //     )?;
 
-            user.amount = user.amount + stake_amount;
-            pool.total_supply = pool.total_supply + stake_amount;
+        //     user.amount = user.amount.checked_add(stake_amount).unwrap_or(0);
+        //     pool.total_supply = pool.total_supply.checked_add(stake_amount).unwrap_or(0);
 
-            //emit deposit event
-            emit!(DepositEvent {
-                from: ctx.accounts.user.key(),
-                pool: pool.to_account_info().key(),
-                amount: stake_amount,
-                timestamp: clock.unix_timestamp
-            });
-        }
+        //     //emit deposit event
+        //     emit!(DepositEvent {
+        //         from: ctx.accounts.user.key(),
+        //         pool: pool.to_account_info().key(),
+        //         amount: stake_amount,
+        //         timestamp: clock.unix_timestamp
+        //     });
+        // }
 
         Ok(())
     }
