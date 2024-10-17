@@ -72,41 +72,41 @@ pub struct CreatePool<'info> {
 #[derive(Accounts)]
 pub struct Deposit<'info> {
     #[account(mut)]
-    pub user: Signer<'info>,
+    pub signer: Signer<'info>,
 
     #[account(
         mut
     )]
-    pub total_stats_account: Account<'info, Total>,
+    pub total_stats_account: Box<Account<'info, Total>>,
 
     #[account(
         mut
     )]
-    pub pool_info_account: Account<'info, PoolInfo>,
+    pub pool_info_account: Box<Account<'info, PoolInfo>>,
 
     #[account(
         init_if_needed,
-        seeds = [USER_INFO_SEED, user.key().as_ref(), pool_info_account.to_account_info().key().as_ref()], 
+        payer = signer, 
+        seeds = [TOKEN_SEED, signer.key().as_ref(), pool_info_account.to_account_info().key().as_ref()], 
         bump, 
-        payer = user, 
-        space = 8 + std::mem::size_of::<UserInfo>()
-    )]
-    pub user_info_account: Box<Account<'info, UserInfo>>,
-
-    #[account(
-        init_if_needed,
-        seeds = [TOKEN_SEED, user.key().as_ref(), pool_info_account.to_account_info().key().as_ref()], 
-        bump, 
-        payer = user, 
         token::mint = mint,
         token::authority = stake_account
     )]
     pub stake_account: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
+        init_if_needed,
+        payer = signer, 
+        seeds = [USER_INFO_SEED, signer.key().as_ref(), pool_info_account.to_account_info().key().as_ref()], 
+        bump, 
+        space = 8 + std::mem::size_of::<UserInfo>(),
+    )]
+    pub user_info_account: Box<Account<'info, UserInfo>>,
+
+    #[account(
         mut, 
         associated_token::mint = mint, 
-        associated_token::authority = user,
+        associated_token::authority = signer,
         associated_token::token_program = token_program
     )]
     pub user_token_account: InterfaceAccount<'info, TokenAccount>,

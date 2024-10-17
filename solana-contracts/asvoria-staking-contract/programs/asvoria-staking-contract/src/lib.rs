@@ -3,7 +3,8 @@ use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{transfer_checked, TransferChecked};
 use solana_program::clock::Clock;
 
-declare_id!("5e879LHNF7n4MxSfSiugekAM1dvJxyZsfzn4919iM1As");
+
+declare_id!("84XVfmNndQhJoWBXLZNcwYNokJ6MX3oAJvTXxefrhwRM");
 
 pub mod constants;
 pub mod errors;
@@ -42,18 +43,18 @@ pub mod asvoria_staking_contract {
     pub fn deposit(ctx: Context<Deposit>, _amount: u64) -> Result<()> {
         let pool = &mut ctx.accounts.pool_info_account;
         let user = &mut ctx.accounts.user_info_account;
-        let total_stats = &mut ctx.accounts.total_stats_account;
+        // let total_stats = &mut ctx.accounts.total_stats_account;
+
+        msg!("pool: {}", pool.to_account_info().key.to_string());
+        msg!("user: {}", user.to_account_info().key.to_string());
+        // msg!("total_stats: {}", total_stats.to_account_info().key.to_string());
+
         // let clock = Clock::get()?;
 
-        msg!("pool Account: {:?}", pool.key().to_string());
-        msg!("user Account: {:?}", user.key().to_string());
-        msg!("total_stats Account: {:?}", total_stats.key().to_string());
-        msg!("stake_account Account: {:?}", ctx.accounts.stake_account.key().to_string());
         // update_pool(pool)?;
         // lock_pending_token(pool, user, total_stats)?;
 
-        // let stake_amount = _amount.checked_mul(10u64.pow(ctx.accounts.mint.decimals as u32)).unwrap_or(0);
-        // // let stake_amount = _amount * (10u64.pow(ctx.accounts.mint.decimals as u32));
+        // let stake_amount = _amount * (10u64.pow(ctx.accounts.mint.decimals as u32));
 
         // if stake_amount > 0 {
         //     if user.amount == 0 {
@@ -67,18 +68,18 @@ pub mod asvoria_staking_contract {
         //                 from: ctx.accounts.user_token_account.to_account_info(),
         //                 mint: ctx.accounts.mint.to_account_info(),
         //                 to: ctx.accounts.stake_account.to_account_info(),
-        //                 authority: ctx.accounts.user.to_account_info(),
+        //                 authority: ctx.accounts.signer.to_account_info(),
         //             },
         //         ),
         //         stake_amount, ctx.accounts.mint.decimals
         //     )?;
 
-        //     user.amount = user.amount.checked_add(stake_amount).unwrap_or(0);
-        //     pool.total_supply = pool.total_supply.checked_add(stake_amount).unwrap_or(0);
+        //     user.amount = user.amount + stake_amount;
+        //     pool.total_supply = pool.total_supply + stake_amount;
 
         //     //emit deposit event
         //     emit!(DepositEvent {
-        //         from: ctx.accounts.user.key(),
+        //         from: ctx.accounts.signer.key(),
         //         pool: pool.to_account_info().key(),
         //         amount: stake_amount,
         //         timestamp: clock.unix_timestamp
